@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Gruppenbericht – FINAL (Quickfilter + Speicherung)</title>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+
+<style>
+  :root{
+    --blue:#0b2a4a;
+    --blue2:#123b66;
+    --gold:#d4af37;
+    --ink:#1d1d1f;
+    --muted:#4a4a52;
+    --bad:#c62828;
+    --bg1:#ffe6f2;
+    --bg2:#fff4e6;
+    --chip:#ffffff;
+  }
+
+  body{
+    margin:0; padding:18px;
+    font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 12% 10%, var(--bg1), transparent 60%),
+      radial-gradient(1100px 600px at 85% 15%, var(--bg2), transparent 55%),
+      linear-gradient(135deg, #fff 0%, #fff6fb 45%, #fff7ef 100%);
+    min-height:100vh;
+  }
+
+  header{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+  header img{ height:54px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.10)); }
+  h1{ margin:0; font-size:22px; color:var(--blue); letter-spacing:.2px; }
+  .sub{ margin-top:4px; color:var(--muted); font-size:12px; font-weight:500; letter-spacing:.2px; }
+
+  .bar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0 12px; }
+
+  .btn{
+    appearance:none; border:0; cursor:pointer;
+    padding:10px 12px; border-radius:12px;
+    background:linear-gradient(135deg,var(--blue),var(--blue2));
+    color:#fff; font-weight:900;
+    box-shadow:0 10px 18px rgba(11,42,74,.25);
+  }
+  .btn.secondary{
+    background:rgba(255,255,255,.82);
+    color:var(--blue);
+    border:1px solid rgba(11,42,74,.25);
+    font-weight:900;
+    box-shadow:0 10px 18px rgba(0,0,0,.08);
+  }
+  .btn.toggle{
+    background:rgba(255,255,255,.82);
+    color:var(--blue);
+    border:1px solid rgba(11,42,74,.22);
+    box-shadow:0 10px 18px rgba(0,0,0,.08);
+  }
+  .btn.toggle.active{
+    background:linear-gradient(135deg,var(--blue),var(--blue2));
+    color:var(--gold);
+    border:1px solid rgba(212,175,55,.55);
+  }
+
+  .file, .ctrl{
+    display:flex; gap:8px; align-items:center;
+    padding:10px 12px; border-radius:12px;
+    background:rgba(255,255,255,.82);
+    border:1px solid rgba(11,42,74,.18);
+    box-shadow:0 10px 18px rgba(0,0,0,.08);
+  }
+  .file label, .ctrl label{ font-size:13px; color:var(--blue); font-weight:900; white-space:nowrap; }
+  .ctrl input, .ctrl select{
+    padding:8px 10px; border-radius:10px;
+    border:1px solid rgba(11,42,74,.22);
+    background:rgba(255,255,255,.98);
+    font-size:12px; outline:none; color:var(--ink);
+  }
+  .ctrl .tiny{ width: 140px; }
+  .ctrl .check{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--blue); font-weight:800; }
+
+  .card{
+    background:rgba(255,255,255,.86);
+    backdrop-filter: blur(8px);
+    border:1px solid rgba(11,42,74,.18);
+    border-radius:18px;
+    box-shadow:0 14px 30px rgba(0,0,0,.12);
+    overflow:hidden;
+  }
+
+  .summary{
+    display:flex; gap:10px; flex-wrap:wrap;
+    padding:14px 16px;
+    border-bottom:2px solid rgba(212,175,55,.35);
+    align-items:center;
+    justify-content:flex-start;
+    background:linear-gradient(90deg, rgba(11,42,74,.08), rgba(212,175,55,.10));
+  }
+  .pill{
+    display:flex; gap:10px; align-items:baseline;
+    padding:10px 12px;
+    border-radius:999px;
+    background:rgba(255,255,255,.94);
+    border:1px solid rgba(11,42,74,.18);
+    font-weight:900;
+  }
+  .pill b{ color:var(--blue); font-size:13px; }
+  .pill span{ font-size:12px; color:var(--ink); }
+
+  .note{ padding:10px 16px 0; color:var(--muted); font-size:12px; }
+
+  table.dataTable{ width:100% !important; border-collapse:separate !important; border-spacing:0; }
+
+  table.dataTable thead th{
+    background:rgba(11,42,74,.10);
+    border-bottom:2px solid rgba(11,42,74,.35) !important;
+    color:var(--blue);
+    text-align:center !important;
+    font-weight:950;
+  }
+
+  /* Zeilen NICHT fett */
+  table.dataTable tbody td{
+    border-bottom:1px solid rgba(43,43,47,.30) !important;
+    text-align:center !important;
+    vertical-align:middle;
+    font-weight:400;
+    color:var(--ink);
+  }
+  table.dataTable tbody tr:hover{ background:rgba(255,231,243,.35); }
+
+  thead .filter-row th{
+    padding:8px 10px;
+    background:rgba(255,255,255,.82);
+    border-bottom:1px solid rgba(11,42,74,.20) !important;
+  }
+  .col-filter{
+    width:100%;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid rgba(11,42,74,.22);
+    background:rgba(255,255,255,.98);
+    outline:none;
+    font-size:12px;
+    color:var(--ink);
+    text-align:center;
+    font-weight:600;
+  }
+
+  th.bbcol, td.bbcol{
+    white-space:nowrap !important;
+    max-width:360px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  th.accol, td.accol{
+    white-space:nowrap !important;
+    max-width:440px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* Market etwas schmaler */
+  th.mktcol, td.mktcol{
+    white-space:nowrap !important;
+    min-width:135px;
+    width:135px;
+  }
+
+  /* Rm Cur & Rm Pick etwas breiter */
+  th.rmcol, td.rmcol{
+    min-width:88px;
+    width:88px;
+  }
+
+  td.neg{ color:var(--bad) !important; font-weight:700; }
+
+  tr.ten-row{ background:rgba(212,175,55,.18) !important; }
+  tr.ten-row:hover{ background:rgba(212,175,55,.28) !important; }
+
+  .dt-buttons .dt-button{
+    background:var(--blue) !important;
+    color:var(--gold) !important;
+    border:1px solid rgba(212,175,55,.55) !important;
+    border-radius:12px !important;
+    font-weight:950 !important;
+    box-shadow:0 10px 18px rgba(11,42,74,.18);
+  }
+
+  div.dt-button-collection{
+    background:var(--blue) !important;
+    border:1px solid rgba(212,175,55,.65) !important;
+    box-shadow:0 14px 30px rgba(0,0,0,.28) !important;
+    padding:8px !important;
+    border-radius:12px !important;
+    z-index:999999 !important;
+  }
+  div.dt-button-collection a.dt-button{
+    display:block !important;
+    width:260px !important;
+    text-align:left !important;
+    padding:10px 12px !important;
+    margin:4px 0 !important;
+    border-radius:10px !important;
+    background:rgba(255,255,255,.06) !important;
+    color:var(--gold) !important;
+    border:1px solid rgba(212,175,55,.22) !important;
+    font-weight:900 !important;
+  }
+  div.dt-button-collection a.dt-button:hover{ background:rgba(212,175,55,.14) !important; }
+  div.dt-button-collection a.dt-button.active{
+    background:rgba(212,175,55,.18) !important;
+    border:1px solid rgba(212,175,55,.70) !important;
+  }
+  div.dt-button-collection a.dt-button.active::before{ content:"✓ "; }
+  div.dt-button-collection a.dt-button:not(.active)::before{ content:"◻ "; color:rgba(212,175,55,.75); }
+
+  .cell-select{
+    width:100%;
+    padding:6px 8px;
+    border-radius:10px;
+    border:1px solid rgba(11,42,74,.25);
+    background:rgba(255,255,255,.98);
+    font-weight:600;
+    color:var(--ink);
+  }
+  .cell-check{
+    transform:scale(1.2);
+    accent-color:var(--blue);
+    cursor:pointer;
+  }
+
+  @media print{
+    header, .bar, .dt-buttons, .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate { display:none !important; }
+    .card{ box-shadow:none; border:0; }
+    table{ font-size:10px !important; }
+    @page { size:A4 landscape; margin:10mm; }
+  }
+</style>
+</head>
+
+<body>
+<header>
+  <img src="Logo_ibis_RGB.png" alt="Logo_ibis_RGB">
+  <div>
+    <h1>Gruppenbericht</h1>
+    <div class="sub">Quickfilter: Wash=true + Market Buttons • Speichern • PDF nur sichtbare Spalten</div>
+  </div>
+</header>
+
+<div class="bar">
+  <button class="btn secondary" id="resetBtn" type="button">Filter zurücksetzen</button>
+  <button class="btn secondary" id="clearBtn" type="button">Tabelle leeren</button>
+  <button class="btn" id="pdfBtn" type="button">PDF herunterladen</button>
+
+  <!-- ✅ Quickfilter Buttons -->
+  <button class="btn toggle" id="washQuickBtn" type="button">Nur Wash = true</button>
+  <button class="btn toggle" id="mktAllBtn" type="button">Market: Alle</button>
+  <button class="btn toggle" id="mktCorpBtn" type="button">Market: Corporate</button>
+  <button class="btn toggle" id="mktLeisBtn" type="button">Market: Leisure</button>
+
+  <div class="file">
+    <label for="importFiles"><b>Import</b> (mehrere möglich):</label>
+    <input id="importFiles" type="file" accept=".txt,.csv" multiple>
+  </div>
+
+  <div class="ctrl">
+    <label>Status:</label>
+    <select id="statusSelect">
+      <option value="">Alle</option>
+      <option value="ACT">ACT</option>
+      <option value="DEF">DEF</option>
+      <option value="TEN">TEN</option>
+    </select>
+  </div>
+
+  <div class="ctrl">
+    <label>Anreise:</label>
+    <input class="tiny" id="arrFrom" type="date">
+    <input class="tiny" id="arrTo" type="date">
+  </div>
+
+  <div class="ctrl">
+    <label>Abreise:</label>
+    <input class="tiny" id="depFrom" type="date">
+    <input class="tiny" id="depTo" type="date">
+  </div>
+
+  <div class="ctrl">
+    <div class="check">
+      <input id="pickupOnly" type="checkbox">
+      <label for="pickupOnly">Nur Pickup (Rm.Nts Pick &gt; 0)</label>
+    </div>
+  </div>
+
+  <div class="ctrl">
+    <div class="check">
+      <input id="negOnly" type="checkbox">
+      <label for="negOnly">Nur negative Zeilen (Rev Cur/Pick &lt; 0)</label>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="summary">
+    <div class="pill"><b>Zeilen:</b> <span id="f_rows">0</span></div>
+    <div class="pill"><b>Revenue Cur:</b> <span id="f_rev">0.00 CHF</span></div>
+    <div class="pill"><b>Revenue Pick:</b> <span id="f_prev">0.00 CHF</span></div>
+    <div class="pill"><b>Ø Rate Cur:</b> <span id="f_rate">0.00</span></div>
+    <div class="pill"><b>Ø Rate Pick:</b> <span id="f_prate">0.00</span></div>
+  </div>
+
+  <div class="note">
+    Quickfilter sind Toggle: klicken = aktiv, nochmal klicken = deaktivieren.
+  </div>
+
+  <div style="padding:10px 12px 16px;">
+    <table id="reportTable" class="display" style="width:100%">
+      <thead>
+        <tr class="filter-row">
+          <th class="bbcol"><input class="col-filter" placeholder="Business Block"></th>
+          <th class="accol"><input class="col-filter" placeholder="Account Name"></th>
+          <th><input class="col-filter" placeholder="Wash (true/false)"></th>
+          <th class="mktcol"><input class="col-filter" placeholder="Market"></th>
+
+          <th><input class="col-filter" placeholder="Anreise"></th>
+          <th><input class="col-filter" placeholder="Abreise"></th>
+          <th class="rmcol"><input class="col-filter" placeholder="Rm Cur"></th>
+          <th><input class="col-filter" placeholder="Revenue Cur"></th>
+          <th><input class="col-filter" placeholder="Avg Rate Cur"></th>
+          <th class="rmcol"><input class="col-filter" placeholder="Rm Pick"></th>
+          <th><input class="col-filter" placeholder="Revenue Pick"></th>
+          <th><input class="col-filter" placeholder="Avg Rate Pick"></th>
+          <th><input class="col-filter" placeholder="BB Id"></th>
+          <th><input class="col-filter" placeholder="Status"></th>
+          <th><input class="col-filter" placeholder="Quelle"></th>
+        </tr>
+
+        <tr>
+          <th class="bbcol">Business Block Name</th>
+          <th class="accol">Account Name</th>
+          <th>Wash-Potenzial</th>
+          <th class="mktcol">Market</th>
+
+          <th>Anreise</th>
+          <th>Abreise</th>
+          <th class="rmcol">Rm Cur</th>
+          <th>Revenue Cur</th>
+          <th>Avg Rate Cur</th>
+          <th class="rmcol">Rm Pick</th>
+          <th>Revenue Pick</th>
+          <th>Avg Rate Pick</th>
+          <th>BB Id</th>
+          <th>Status</th>
+          <th>Quelle</th>
+        </tr>
+      </thead>
+
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.colVis.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+/* =================== Schweizer Format + CHF + Negative Klammern =================== */
+function toNumber(x){
+  if (x === null || x === undefined) return 0;
+  const s = String(x).trim().replace(/\s/g,'').replace(/CHF/gi,'').replace(/,/g,'');
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
+function fmt2(n){ return Number(n).toLocaleString("de-CH",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtMoney(n){
+  const val = Number(n);
+  if (val < 0) return "(" + fmt2(Math.abs(val)) + ")";
+  return fmt2(val);
+}
+function renderInt(data, type){
+  const n = Math.round(toNumber(data));
+  if (type === 'display') return String(n);
+  return n;
+}
+function renderCHF(data, type){
+  const n = toNumber(data);
+  if (type === 'display') return fmtMoney(n) + " CHF";
+  return n;
+}
+function renderRate(data, type){
+  const n = toNumber(data);
+  if (type === 'display') return fmtMoney(n);
+  return n;
+}
+
+/* =================== Editable columns =================== */
+const MARKET_OPTIONS = ["", "Corporate", "Leisure"];
+
+/* =================== Auto-Market: Leisure bei bestimmten Account Names (Teil-Matching) =================== */
+const AUTO_LEISURE_ACCOUNTS = [
+  "BEY TOURS",
+  "EMETRAVEL",
+  "EUROPE INCOMING HOLDINGS LTD.",
+  "EURORUTAS TUOR OPERATOR S.L.",
+  "MEGA TRAVEL OPERADORA S.A DE C.V",
+  "MASEUROPA",
+  "GLOBETROTTERS TRAVEL AND TOURS",
+  "GOEUGO INTERNATIONAL LTD.",
+  "VIYA TRAVEL LTD",
+  "PANAVISION TOURS  (CIRCUITOS A FONDO S",
+  "EUROPA MUNDO VACACIONES, S.L.U.",
+  "G2 TRAVEL LTD.",
+  "KUONI GLOBAL TRAVEL SERVICES (SCHWEIZ)"
+];
+
+function normAccount(s){
+  return String(s ?? "")
+    .toUpperCase()
+    .replace(/[’']/g, "'")
+    .replace(/[“”"]/g, '"')
+    .replace(/\u00A0/g, ' ')
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function shouldAutoLeisure(accountName){
+  const n = normAccount(accountName);
+  if (!n) return false;
+  return AUTO_LEISURE_ACCOUNTS.some(a => {
+    const aa = normAccount(a);
+    return n.includes(aa) || n.startsWith(aa);
+  });
+}
+
+function applyAutoLeisureAllRows(){
+  if (!dt) return;
+  dt.rows().every(function(){
+    const r = this.data();
+    if (!r) return;
+    const acc = r[1]; // Account Name
+    if (shouldAutoLeisure(acc)) {
+      r[3] = "Leisure"; // Market
+      this.data(r);
+    }
+  });
+}
+
+function washToBool(val){
+  if (val === true) return true;
+  const s = String(val ?? "").trim().toLowerCase();
+  return (s === "true" || s === "1" || s === "yes" || s === "ja" || s === "y" || s === "✓");
+}
+function washDisplay(val){ return washToBool(val) ? "true" : "false"; }
+function marketNormalize(val){
+  const s = String(val ?? "").trim();
+  if (!s) return "";
+  const found = MARKET_OPTIONS.find(o => o.toLowerCase() === s.toLowerCase());
+  return found ?? s;
+}
+function renderWash(val, type){
+  const b = washToBool(val);
+  if (type === 'display'){
+    return `<input class="cell-check wash-check" type="checkbox" ${b ? "checked":""}>`;
+  }
+  return b ? "true" : "false";
+}
+function renderMarket(val, type){
+  const v = marketNormalize(val);
+  if (type === 'display'){
+    const opts = MARKET_OPTIONS.map(o=>{
+      const sel = (o && o.toLowerCase() === v.toLowerCase()) ? "selected" : (!o && !v ? "selected":"");
+      return `<option value="${o}" ${sel}>${o || "—"}</option>`;
+    }).join("");
+    return `<select class="cell-select market-select">${opts}</select>`;
+  }
+  return v || "";
+}
+
+/* =================== Robust Delimited Parser =================== */
+function parseDelimited(text, delimiter){
+  const rows=[]; let row=[]; let cur=''; let inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i], next=text[i+1];
+    if(ch === '"'){
+      if(inQuotes && next === '"'){ cur+='"'; i++; }
+      else inQuotes = !inQuotes;
+      continue;
+    }
+    if(!inQuotes && (ch === '\n' || ch === '\r')){
+      if(ch === '\r' && next === '\n') i++;
+      row.push(cur); rows.push(row); row=[]; cur=''; continue;
+    }
+    if(!inQuotes && ch === delimiter){
+      row.push(cur); cur=''; continue;
+    }
+    cur += ch;
+  }
+  row.push(cur); rows.push(row);
+  return rows.map(r=>r.map(c=>(c??'').trim())).filter(r=>r.some(c=>c!=='')); 
+}
+function detectDelimiter(line){
+  if(line.includes('\t')) return '\t';
+  const comma=(line.match(/,/g)||[]).length;
+  const semi=(line.match(/;/g)||[]).length;
+  return semi>comma?';':',';
+}
+function buildHeaderMap(headerRow){
+  const map={}; headerRow.forEach((name,idx)=>{ const k=(name||'').trim(); if(k) map[k]=idx; });
+  return map;
+}
+function getCell(cols,map,name){
+  const idx=map[name]; if(idx===undefined) return ''; return cols[idx] ?? '';
+}
+function isFooterOrLabel(firstCell){
+  const v=(firstCell||'').trim();
+  return v.startsWith('CF_NAME_FILTER') || v==='Filter' || v.startsWith('CF_');
+}
+function isGrandTotal(cols,map){
+  const groupBy=getCell(cols,map,'GROUP_BY');
+  const col1=getCell(cols,map,'COL1');
+  const bookId=(getCell(cols,map,'BOOK_ID')||'').trim();
+  return (groupBy==='ALL' && col1==='ALL' && bookId==='');
+}
+function isCurrencyOrVariance(cols,map){
+  const col1=(getCell(cols,map,'COL1')||'').trim().toLowerCase();
+  const col2=(getCell(cols,map,'COL2')||'').trim().toLowerCase();
+  const col3=(getCell(cols,map,'COL3')||'').trim().toLowerCase();
+  const hay=`${col1} ${col2} ${col3}`;
+  return hay.includes('currency') || hay.includes('variance') || hay==='chf' || hay.includes(' chf');
+}
+
+/* =================== Date Range Filter =================== */
+function parseOperaDate(d){
+  if(!d) return null;
+  const m=String(d).trim().match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+  if(!m) return null;
+  return new Date(Date.UTC(2000+Number(m[3]),Number(m[2])-1,Number(m[1])));
+}
+function parseISODate(s){
+  if(!s) return null;
+  const m=String(s).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return null;
+  return new Date(Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])));
+}
+
+/* Quickfilter state */
+let washQuickOn = false;
+let marketQuick = ""; // "", "Corporate", "Leisure"
+
+$.fn.dataTable.ext.search.push(function(settings, data){
+  if(settings.nTable.id !== 'reportTable') return true;
+
+  // Quickfilter
+  if (washQuickOn){
+    if (String(data[2]).toLowerCase() !== 'true') return false;
+  }
+  if (marketQuick){
+    if (String(data[3]).toLowerCase() !== marketQuick.toLowerCase()) return false;
+  }
+
+  const arr=parseOperaDate(data[4]);
+  const dep=parseOperaDate(data[5]);
+
+  const arrFrom=parseISODate(document.getElementById('arrFrom').value);
+  const arrTo=parseISODate(document.getElementById('arrTo').value);
+  const depFrom=parseISODate(document.getElementById('depFrom').value);
+  const depTo=parseISODate(document.getElementById('depTo').value);
+
+  const pickupOnly=document.getElementById('pickupOnly').checked;
+  const negOnly=document.getElementById('negOnly').checked;
+
+  function inRange(d, from, to){
+    if(!d) return true;
+    if(from && d<from) return false;
+    if(to){
+      const toEnd=new Date(to.getTime()+24*60*60*1000-1);
+      if(d>toEnd) return false;
+    }
+    return true;
+  }
+
+  if(!inRange(arr,arrFrom,arrTo)) return false;
+  if(!inRange(dep,depFrom,depTo)) return false;
+
+  if(pickupOnly){
+    if(!(toNumber(data[9])>0)) return false;
+  }
+  if(negOnly){
+    if(!(toNumber(data[7])<0 || toNumber(data[10])<0)) return false;
+  }
+
+  return true;
+});
+
+/* =================== Storage =================== */
+let dt;
+const STORAGE_KEY="gruppenbericht_data_v4_quickfilters";
+
+function saveTableToLocal(){
+  try{
+    const rows=dt.rows().data().toArray().map(r=>[...r]);
+    rows.forEach(r=>{
+      r[2]=washToBool(r[2]);
+
+      // Auto-Leisure überschreibt Market beim Speichern (stabil)
+      r[3]=shouldAutoLeisure(r[1]) ? "Leisure" : marketNormalize(r[3]);
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+  }catch(e){ console.warn(e); }
+}
+function loadTableFromLocal(){
+  try{
+    const saved=localStorage.getItem(STORAGE_KEY);
+    if(!saved) return;
+    const rows=JSON.parse(saved);
+    if(!Array.isArray(rows) || !rows.length) return;
+    if(dt.rows().count()>0) return;
+    rows.forEach(r=>{
+      const rr=[...r];
+      rr[2]=washToBool(rr[2]);
+
+      // Auto-Leisure beim Laden
+      rr[3]=shouldAutoLeisure(rr[1]) ? "Leisure" : marketNormalize(rr[3]);
+
+      dt.row.add(rr);
+    });
+    dt.draw();
+  }catch(e){ console.warn(e); }
+}
+
+/* =================== Totals =================== */
+function computeTotals(rows){
+  let curRev=0, pickRev=0, curRateSum=0, curRateCount=0, pickRm=0;
+  rows.forEach(r=>{
+    curRev += toNumber(r[7]);
+    pickRev += toNumber(r[10]);
+    const cr=toNumber(r[8]);
+    if(cr!==0){ curRateSum+=cr; curRateCount++; }
+    pickRm += toNumber(r[9]);
+  });
+  const curAvg = curRateCount ? (curRateSum/curRateCount) : 0;
+  const pickAvg = pickRm>0 ? (pickRev/pickRm) : 0;
+  return {rows:rows.length, curRev, pickRev, curAvg, pickAvg};
+}
+function updateTotals(){
+  const rows=dt.rows({search:'applied'}).data().toArray();
+  const t=computeTotals(rows);
+  document.getElementById('f_rows').textContent=t.rows;
+  document.getElementById('f_rev').textContent=fmtMoney(t.curRev)+" CHF";
+  document.getElementById('f_prev').textContent=fmtMoney(t.pickRev)+" CHF";
+  document.getElementById('f_rate').textContent=fmtMoney(t.curAvg);
+  document.getElementById('f_prate').textContent=fmtMoney(t.pickAvg);
+}
+
+$(function(){
+  dt = $('#reportTable').DataTable({
+    orderCellsTop:true,
+    ordering:true,
+    pageLength:25,
+    lengthMenu:[10,25,50,100],
+    dom:'Bfrtip',
+    buttons:[
+      {
+        extend:'excelHtml5',
+        title:'Gruppenbericht',
+        exportOptions:{
+          columns:':visible',
+          format:{
+            body:function(data,row,col,node){
+              if(col===2) return washToBool($(node).find('input.wash-check').prop('checked')) ? 'true':'false';
+              if(col===3) return marketNormalize($(node).find('select.market-select').val()||'');
+              return String(data).replace(/<[^>]*>/g,'');
+            }
+          }
+        }
+      },
+      { extend:'colvis', text:'Spalten auswählen' }
+    ],
+    columnDefs:[
+      { targets:0, className:'bbcol', width:'360px' },
+      { targets:1, className:'accol', width:'440px' },
+      { targets:3, className:'mktcol', width:'135px' },
+      { targets:[6,9], className:'rmcol', width:'88px' },
+
+      { targets:2, render:renderWash },
+      { targets:3, render:renderMarket },
+
+      { targets:[6,9], render:renderInt },
+      { targets:[7,10], render:renderCHF },
+      { targets:[8,11], render:renderRate }
+    ],
+    rowCallback:function(row,data){
+      const status=String(data[13]||'').toUpperCase();
+      row.classList.toggle('ten-row', status==='TEN');
+
+      $('td', row).removeClass('neg');
+      if(toNumber(data[7])<0) $('td', row).eq(7).addClass('neg');
+      if(toNumber(data[10])<0) $('td', row).eq(10).addClass('neg');
+    }
+  });
+
+  $('#reportTable thead tr.filter-row th').each(function(i){
+    $('input', this).on('keyup change clear', function(){
+      dt.column(i).search(this.value || '').draw();
+    });
+  });
+
+  $('#statusSelect').on('change', function(){
+    const v=(this.value||'').trim();
+    dt.column(13).search(v ? `^${v}$` : '', true, false).draw();
+  });
+
+  ['arrFrom','arrTo','depFrom','depTo','pickupOnly','negOnly'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', ()=>dt.draw());
+  });
+
+  dt.on('draw', updateTotals);
+
+  loadTableFromLocal();
+
+  // Auto-Leisure auch für bereits geladene Daten sicherstellen
+  applyAutoLeisureAllRows();
+  saveTableToLocal();
+
+  updateTotals();
+
+  $('#reportTable tbody').on('change','input.wash-check',function(){
+    const tr=$(this).closest('tr');
+    const row=dt.row(tr);
+    const data=row.data();
+    data[2]=$(this).prop('checked');
+    row.data(data).invalidate();
+    saveTableToLocal();
+    dt.draw(); // so Quickfilter reacts immediately
+  });
+
+  $('#reportTable tbody').on('change','select.market-select',function(){
+    const tr=$(this).closest('tr');
+    const row=dt.row(tr);
+    const data=row.data();
+    data[3]=marketNormalize($(this).val());
+    row.data(data).invalidate();
+    saveTableToLocal();
+    dt.draw();
+  });
+
+  // init quickfilter buttons state
+  setMarketQuick("");
+});
+
+/* =================== Quickfilter Buttons =================== */
+function setWashQuick(on){
+  washQuickOn = !!on;
+  document.getElementById('washQuickBtn').classList.toggle('active', washQuickOn);
+  dt.draw();
+}
+function setMarketQuick(val){
+  marketQuick = val || "";
+  document.getElementById('mktAllBtn').classList.toggle('active', marketQuick==="");
+  document.getElementById('mktCorpBtn').classList.toggle('active', marketQuick==="Corporate");
+  document.getElementById('mktLeisBtn').classList.toggle('active', marketQuick==="Leisure");
+  dt.draw();
+}
+
+document.getElementById('washQuickBtn').addEventListener('click', ()=>{
+  setWashQuick(!washQuickOn);
+});
+
+document.getElementById('mktAllBtn').addEventListener('click', ()=>setMarketQuick(""));
+document.getElementById('mktCorpBtn').addEventListener('click', ()=>setMarketQuick("Corporate"));
+document.getElementById('mktLeisBtn').addEventListener('click', ()=>setMarketQuick("Leisure"));
+
+/* =================== Buttons =================== */
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  dt.clear().draw();
+  updateTotals();
+  localStorage.removeItem(STORAGE_KEY);
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  dt.columns().search('');
+  dt.search('');
+  document.querySelectorAll('.col-filter').forEach(i=>i.value='');
+  document.getElementById('statusSelect').value='';
+  document.getElementById('arrFrom').value='';
+  document.getElementById('arrTo').value='';
+  document.getElementById('depFrom').value='';
+  document.getElementById('depTo').value='';
+  document.getElementById('pickupOnly').checked=false;
+  document.getElementById('negOnly').checked=false;
+
+  // reset quickfilters too
+  setWashQuick(false);
+  setMarketQuick("");
+
+  dt.draw();
+});
+
+/* =================== Import =================== */
+function addRowsFromOpera(text, sourceName){
+  const firstLine=(text.split(/\r?\n/).find(l=>l.trim().length)||'');
+  const delim=detectDelimiter(firstLine);
+  const rows=parseDelimited(text, delim);
+  if(!rows.length) return;
+
+  const header=rows[0];
+  const map=buildHeaderMap(header);
+
+  if(map['ARRIVALDATE']===undefined || map['DEPARTUREDATE']===undefined){
+    alert('Import-Fehler: Header fehlt. Zeile 1 muss Spaltennamen enthalten (ARRIVALDATE/DEPARTUREDATE/...).');
+    return;
+  }
+
+  for(let i=1;i<rows.length;i++){
+    const cols=rows[i];
+    if(!cols || !cols.length) continue;
+
+    if(isFooterOrLabel(cols[0])) break;
+    if(isGrandTotal(cols,map)) continue;
+    if(isCurrencyOrVariance(cols,map)) continue;
+
+    const pickRm=getCell(cols,map,'CP_PICKUPROOMNIGHTS');
+    const pickRev=getCell(cols,map,'CP_PICKUPREVENUE');
+    const prm=toNumber(pickRm);
+    const pr=toNumber(pickRev);
+    const pickRate=prm>0 ? (pr/prm) : 0;
+
+    const statusRaw=(getCell(cols,map,'BOOKING_STATUS') || getCell(cols,map,'BOOKINGSTATUS') || '').trim().toUpperCase();
+
+    const accName = getCell(cols,map,'NVL_ACCOUNT_NAME_AGENT_NAME');
+
+    dt.row.add([
+      getCell(cols,map,'DESCRIPTION'),
+      accName,
+      false, // wash
+      (shouldAutoLeisure(accName) ? "Leisure" : ""), // market auto
+      getCell(cols,map,'ARRIVALDATE'),
+      getCell(cols,map,'DEPARTUREDATE'),
+      getCell(cols,map,'CP_CURRENTROOMNIGHTS'),
+      getCell(cols,map,'CP_CURRENTREVENUE'),
+      getCell(cols,map,'CP_CURRENTAVGRATE'),
+      pickRm,
+      pickRev,
+      pickRate,
+      getCell(cols,map,'BOOK_ID'),
+      statusRaw,
+      sourceName || ''
+    ]);
+  }
+}
+
+document.getElementById('importFiles').addEventListener('change', async (e)=>{
+  const files=Array.from(e.target.files||[]);
+  if(!files.length) return;
+
+  for(const file of files){
+    const text=await file.text();
+    addRowsFromOpera(text, file.name);
+  }
+
+  dt.draw();
+
+  // Auto-Leisure nachziehen, falls etwas manuell/alt drin ist
+  applyAutoLeisureAllRows();
+
+  updateTotals();
+  saveTableToLocal();
+  e.target.value='';
+});
+
+/* =================== PDF Export (only visible columns) =================== */
+async function tryLoadLogoDataUrl(path){
+  try{
+    const res=await fetch(path,{cache:'no-store'});
+    if(!res.ok) return null;
+    const blob=await res.blob();
+    return await new Promise((resolve)=>{
+      const fr=new FileReader();
+      fr.onload=()=>resolve(fr.result);
+      fr.onerror=()=>resolve(null);
+      fr.readAsDataURL(blob);
+    });
+  }catch(e){ return null; }
+}
+
+document.getElementById('pdfBtn').addEventListener('click', async ()=>{
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+
+  doc.setFillColor(11,42,74);
+  doc.rect(0,0,297,18,'F');
+  doc.setFillColor(212,175,55);
+  doc.rect(0,18,297,2,'F');
+  doc.setTextColor(212,175,55);
+  doc.setFontSize(16);
+  doc.text('Gruppenbericht',14,12);
+
+  const logo=await tryLoadLogoDataUrl('Logo_ibis_RGB.png');
+  if(logo){
+    try{ doc.addImage(logo,'PNG',245,4,45,10); }catch(e){}
+  }
+
+  const visibleCols=[];
+  dt.columns().every(function(i){ if(this.visible()) visibleCols.push(i); });
+
+  const colNames={
+    0:'Business Block',1:'Account',2:'Wash-Potenzial',3:'Market',4:'Anreise',5:'Abreise',
+    6:'Rm Cur',7:'Revenue Cur',8:'Avg Cur',9:'Rm Pick',10:'Revenue Pick',11:'Avg Pick',
+    12:'BB Id',13:'Status',14:'Quelle'
+  };
+
+  const rows=dt.rows({search:'applied'}).data().toArray();
+  const totals=computeTotals(rows);
+
+  const head=[ visibleCols.map(i=>colNames[i]||`Col ${i}`) ];
+
+  const body=rows.map(r=>visibleCols.map(i=>{
+    if(i===2) return washDisplay(r[2]);
+    if(i===3) return marketNormalize(r[3]);
+    if(i===7 || i===10) return fmtMoney(toNumber(r[i]))+" CHF";
+    if(i===8 || i===11) return fmtMoney(toNumber(r[i]));
+    if(i===6 || i===9) return String(Math.round(toNumber(r[i])));
+    return String(r[i]??'');
+  }));
+
+  doc.autoTable({
+    head, body,
+    startY:24,
+    styles:{fontSize:8, cellPadding:2, textColor:[29,29,31]},
+    headStyles:{fillColor:[11,42,74], textColor:[212,175,55]},
+    alternateRowStyles:{fillColor:[250,250,252]},
+    didDrawPage:function(data){
+      const y=data.cursor.y+6;
+      doc.setFontSize(10);
+      doc.setTextColor(11,42,74);
+      doc.text(
+        `Filter Total: Zeilen ${totals.rows} | Cur Rev ${fmtMoney(totals.curRev)} CHF | Pick Rev ${fmtMoney(totals.pickRev)} CHF | ØCur ${fmtMoney(totals.curAvg)} | ØPick ${fmtMoney(totals.pickAvg)}`,
+        14, y
+      );
+    }
+  });
+
+  const stamp=new Date().toISOString().slice(0,10);
+  doc.save(`Gruppenbericht_${stamp}.pdf`);
+});
+</script>
+</body>
+</html>

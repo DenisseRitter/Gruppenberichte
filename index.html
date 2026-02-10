@@ -18,7 +18,6 @@
     --bad:#c62828;
     --bg1:#ffe6f2;
     --bg2:#fff4e6;
-    --chip:#ffffff;
   }
 
   body{
@@ -122,13 +121,13 @@
     font-weight:950;
   }
 
-  /* Zeilen NICHT fett */
   table.dataTable tbody td{
     border-bottom:1px solid rgba(43,43,47,.30) !important;
     text-align:center !important;
     vertical-align:middle;
     font-weight:400;
     color:var(--ink);
+    white-space:nowrap;
   }
   table.dataTable tbody tr:hover{ background:rgba(255,231,243,.35); }
 
@@ -162,22 +161,17 @@
     overflow:hidden;
     text-overflow:ellipsis;
   }
-
-  /* Market etwas schmaler */
   th.mktcol, td.mktcol{
     white-space:nowrap !important;
     min-width:135px;
     width:135px;
   }
-
-  /* Rm Cur & Rm Pick etwas breiter */
   th.rmcol, td.rmcol{
     min-width:88px;
     width:88px;
   }
 
   td.neg{ color:var(--bad) !important; font-weight:700; }
-
   tr.ten-row{ background:rgba(212,175,55,.18) !important; }
   tr.ten-row:hover{ background:rgba(212,175,55,.28) !important; }
 
@@ -256,6 +250,11 @@
   <button class="btn secondary" id="clearBtn" type="button">Tabelle leeren</button>
   <button class="btn" id="pdfBtn" type="button">PDF herunterladen</button>
 
+  <!-- ✅ Schnell-Sortierung -->
+  <button class="btn secondary" id="sortRevCurBtn" type="button">Sort: Revenue Cur ↓</button>
+  <button class="btn secondary" id="sortRevPickBtn" type="button">Sort: Revenue Pick ↓</button>
+  <button class="btn secondary" id="sortResetBtn" type="button">Sort Reset</button>
+
   <!-- ✅ Quickfilter Buttons -->
   <button class="btn toggle" id="washQuickBtn" type="button">Nur Wash = true</button>
   <button class="btn toggle" id="mktAllBtn" type="button">Market: Alle</button>
@@ -274,9 +273,11 @@
       <option value="ACT">ACT</option>
       <option value="DEF">DEF</option>
       <option value="TEN">TEN</option>
+      <option value="CXL">CXL</option>
     </select>
   </div>
 
+  <!-- ✅ Schnellfilter Datum (bleibt erhalten) -->
   <div class="ctrl">
     <label>Anreise:</label>
     <input class="tiny" id="arrFrom" type="date">
@@ -291,13 +292,6 @@
 
   <div class="ctrl">
     <div class="check">
-      <input id="pickupOnly" type="checkbox">
-      <label for="pickupOnly">Nur Pickup (Rm.Nts Pick &gt; 0)</label>
-    </div>
-  </div>
-
-  <div class="ctrl">
-    <div class="check">
       <input id="negOnly" type="checkbox">
       <label for="negOnly">Nur negative Zeilen (Rev Cur/Pick &lt; 0)</label>
     </div>
@@ -307,14 +301,24 @@
 <div class="card">
   <div class="summary">
     <div class="pill"><b>Zeilen:</b> <span id="f_rows">0</span></div>
+
+    <!-- ✅ NEU: Roomnights Summen -->
+    <div class="pill"><b>Rm Cur:</b> <span id="f_rmcur">0</span></div>
+    <div class="pill"><b>Rm Pick:</b> <span id="f_rmpick">0</span></div>
+
     <div class="pill"><b>Revenue Cur:</b> <span id="f_rev">0.00 CHF</span></div>
     <div class="pill"><b>Revenue Pick:</b> <span id="f_prev">0.00 CHF</span></div>
     <div class="pill"><b>Ø Rate Cur:</b> <span id="f_rate">0.00</span></div>
     <div class="pill"><b>Ø Rate Pick:</b> <span id="f_prate">0.00</span></div>
+
+    <div class="pill"><b>ACT:</b> <span id="k_act">0 (0%)</span></div>
+    <div class="pill"><b>OTB:</b> <span id="k_otb">0 (0%)</span></div>
+    <div class="pill"><b>ACT Rev Cur:</b> <span id="k_act_rev">0.00 CHF</span></div>
+    <div class="pill"><b>OTB Rev Cur:</b> <span id="k_otb_rev">0.00 CHF</span></div>
   </div>
 
   <div class="note">
-    Quickfilter sind Toggle: klicken = aktiv, nochmal klicken = deaktivieren.
+    Du hast oben Datums-Schnellfilter + unten Excel-Spaltenfilter. Beides bleibt aktiv.
   </div>
 
   <div style="padding:10px 12px 16px;">
@@ -409,21 +413,12 @@ const MARKET_OPTIONS = ["", "Corporate", "Leisure"];
 
 /* =================== Auto-Market: Leisure bei bestimmten Account Names (Teil-Matching) =================== */
 const AUTO_LEISURE_ACCOUNTS = [
-  "BEY TOURS",
-  "EMETRAVEL",
-  "EUROPE INCOMING HOLDINGS LTD.",
-  "EURORUTAS TUOR OPERATOR S.L.",
-  "MEGA TRAVEL OPERADORA S.A DE C.V",
-  "MASEUROPA",
-  "GLOBETROTTERS TRAVEL AND TOURS",
-  "GOEUGO INTERNATIONAL LTD.",
-  "VIYA TRAVEL LTD",
-  "PANAVISION TOURS  (CIRCUITOS A FONDO S",
-  "EUROPA MUNDO VACACIONES, S.L.U.",
-  "G2 TRAVEL LTD.",
-  "KUONI GLOBAL TRAVEL SERVICES (SCHWEIZ)"
+  "BEY TOURS","EMETRAVEL","EUROPE INCOMING HOLDINGS LTD.","EURORUTAS TUOR OPERATOR S.L.",
+  "MEGA TRAVEL OPERADORA S.A DE C.V","MASEUROPA","GLOBETROTTERS TRAVEL AND TOURS",
+  "GOEUGO INTERNATIONAL LTD.","VIYA TRAVEL LTD","PANAVISION TOURS  (CIRCUITOS A FONDO S",
+  "EUROPA MUNDO VACACIONES, S.L.U.","G2 TRAVEL LTD.","KUONI GLOBAL TRAVEL SERVICES (SCHWEIZ)",
+  "EUROPE INCOMING LONDON","VOSAIO TRAVEL LIMITED","MAPA TOURS"
 ];
-
 function normAccount(s){
   return String(s ?? "")
     .toUpperCase()
@@ -433,7 +428,6 @@ function normAccount(s){
     .replace(/\s+/g, " ")
     .trim();
 }
-
 function shouldAutoLeisure(accountName){
   const n = normAccount(accountName);
   if (!n) return false;
@@ -442,15 +436,14 @@ function shouldAutoLeisure(accountName){
     return n.includes(aa) || n.startsWith(aa);
   });
 }
-
 function applyAutoLeisureAllRows(){
   if (!dt) return;
   dt.rows().every(function(){
     const r = this.data();
     if (!r) return;
-    const acc = r[1]; // Account Name
+    const acc = r[1];
     if (shouldAutoLeisure(acc)) {
-      r[3] = "Leisure"; // Market
+      r[3] = "Leisure";
       this.data(r);
     }
   });
@@ -540,7 +533,7 @@ function isCurrencyOrVariance(cols,map){
   return hay.includes('currency') || hay.includes('variance') || hay==='chf' || hay.includes(' chf');
 }
 
-/* =================== Date Range Filter =================== */
+/* =================== Date helpers =================== */
 function parseOperaDate(d){
   if(!d) return null;
   const m=String(d).trim().match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
@@ -561,7 +554,6 @@ let marketQuick = ""; // "", "Corporate", "Leisure"
 $.fn.dataTable.ext.search.push(function(settings, data){
   if(settings.nTable.id !== 'reportTable') return true;
 
-  // Quickfilter
   if (washQuickOn){
     if (String(data[2]).toLowerCase() !== 'true') return false;
   }
@@ -569,33 +561,28 @@ $.fn.dataTable.ext.search.push(function(settings, data){
     if (String(data[3]).toLowerCase() !== marketQuick.toLowerCase()) return false;
   }
 
-  const arr=parseOperaDate(data[4]);
-  const dep=parseOperaDate(data[5]);
+  // Date range top (Anreise/Abreise)
+  const arr = parseOperaDate(data[4]);
+  const dep = parseOperaDate(data[5]);
 
-  const arrFrom=parseISODate(document.getElementById('arrFrom').value);
-  const arrTo=parseISODate(document.getElementById('arrTo').value);
-  const depFrom=parseISODate(document.getElementById('depFrom').value);
-  const depTo=parseISODate(document.getElementById('depTo').value);
-
-  const pickupOnly=document.getElementById('pickupOnly').checked;
-  const negOnly=document.getElementById('negOnly').checked;
+  const arrFrom = parseISODate(document.getElementById('arrFrom').value);
+  const arrTo   = parseISODate(document.getElementById('arrTo').value);
+  const depFrom = parseISODate(document.getElementById('depFrom').value);
+  const depTo   = parseISODate(document.getElementById('depTo').value);
 
   function inRange(d, from, to){
     if(!d) return true;
-    if(from && d<from) return false;
+    if(from && d < from) return false;
     if(to){
-      const toEnd=new Date(to.getTime()+24*60*60*1000-1);
-      if(d>toEnd) return false;
+      const toEnd = new Date(to.getTime()+24*60*60*1000-1);
+      if(d > toEnd) return false;
     }
     return true;
   }
+  if(!inRange(arr, arrFrom, arrTo)) return false;
+  if(!inRange(dep, depFrom, depTo)) return false;
 
-  if(!inRange(arr,arrFrom,arrTo)) return false;
-  if(!inRange(dep,depFrom,depTo)) return false;
-
-  if(pickupOnly){
-    if(!(toNumber(data[9])>0)) return false;
-  }
+  const negOnly=document.getElementById('negOnly').checked;
   if(negOnly){
     if(!(toNumber(data[7])<0 || toNumber(data[10])<0)) return false;
   }
@@ -612,8 +599,6 @@ function saveTableToLocal(){
     const rows=dt.rows().data().toArray().map(r=>[...r]);
     rows.forEach(r=>{
       r[2]=washToBool(r[2]);
-
-      // Auto-Leisure überschreibt Market beim Speichern (stabil)
       r[3]=shouldAutoLeisure(r[1]) ? "Leisure" : marketNormalize(r[3]);
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
@@ -629,44 +614,77 @@ function loadTableFromLocal(){
     rows.forEach(r=>{
       const rr=[...r];
       rr[2]=washToBool(rr[2]);
-
-      // Auto-Leisure beim Laden
       rr[3]=shouldAutoLeisure(rr[1]) ? "Leisure" : marketNormalize(rr[3]);
-
       dt.row.add(rr);
     });
     dt.draw();
   }catch(e){ console.warn(e); }
 }
 
-/* =================== Totals =================== */
+/* =================== Totals + KPI =================== */
 function computeTotals(rows){
-  let curRev=0, pickRev=0, curRateSum=0, curRateCount=0, pickRm=0;
+  let curRev=0, pickRev=0;
+  let curRateSum=0, curRateCount=0;
+
+  let curRm=0, pickRm=0;
+
   rows.forEach(r=>{
+    curRm  += toNumber(r[6]);   // Rm Cur
+    pickRm += toNumber(r[9]);   // Rm Pick
+
     curRev += toNumber(r[7]);
     pickRev += toNumber(r[10]);
+
     const cr=toNumber(r[8]);
     if(cr!==0){ curRateSum+=cr; curRateCount++; }
-    pickRm += toNumber(r[9]);
   });
+
   const curAvg = curRateCount ? (curRateSum/curRateCount) : 0;
   const pickAvg = pickRm>0 ? (pickRev/pickRm) : 0;
-  return {rows:rows.length, curRev, pickRev, curAvg, pickAvg};
+
+  return {rows:rows.length, curRm, pickRm, curRev, pickRev, curAvg, pickAvg};
+}
+function pct(part, total){ return total ? (part/total)*100 : 0; }
+function statusBucket(status){
+  const s = String(status || "").trim().toUpperCase();
+  if (s === "ACT") return "ACT";
+  if (s === "TEN" || s === "DEF") return "OTB";
+  return "OTHER";
+}
+function updateActOtbKpis(rows){
+  let act=0, otb=0, actRev=0, otbRev=0;
+  rows.forEach(r=>{
+    const b=statusBucket(r[13]);
+    if(b==="ACT"){ act++; actRev += toNumber(r[7]); }
+    if(b==="OTB"){ otb++; otbRev += toNumber(r[7]); }
+  });
+  const total = rows.length;
+  document.getElementById("k_act").textContent = `${act} (${pct(act,total).toFixed(1)}%)`;
+  document.getElementById("k_otb").textContent = `${otb} (${pct(otb,total).toFixed(1)}%)`;
+  document.getElementById("k_act_rev").textContent = fmtMoney(actRev) + " CHF";
+  document.getElementById("k_otb_rev").textContent = fmtMoney(otbRev) + " CHF";
 }
 function updateTotals(){
   const rows=dt.rows({search:'applied'}).data().toArray();
   const t=computeTotals(rows);
   document.getElementById('f_rows').textContent=t.rows;
+
+  // ✅ NEU: Roomnights Summen
+  document.getElementById('f_rmcur').textContent=String(Math.round(t.curRm));
+  document.getElementById('f_rmpick').textContent=String(Math.round(t.pickRm));
+
   document.getElementById('f_rev').textContent=fmtMoney(t.curRev)+" CHF";
   document.getElementById('f_prev').textContent=fmtMoney(t.pickRev)+" CHF";
   document.getElementById('f_rate').textContent=fmtMoney(t.curAvg);
   document.getElementById('f_prate').textContent=fmtMoney(t.pickAvg);
+  updateActOtbKpis(rows);
 }
 
 $(function(){
   dt = $('#reportTable').DataTable({
     orderCellsTop:true,
     ordering:true,
+    order: [],             // ✅ Default: Original-Reihenfolge (keine Sortierung)
     pageLength:25,
     lengthMenu:[10,25,50,100],
     dom:'Bfrtip',
@@ -701,7 +719,7 @@ $(function(){
       { targets:[8,11], render:renderRate }
     ],
     rowCallback:function(row,data){
-      const status=String(data[13]||'').toUpperCase();
+      const status=String(data[13]||'').toUpperCase().trim();
       row.classList.toggle('ten-row', status==='TEN');
 
       $('td', row).removeClass('neg');
@@ -710,31 +728,38 @@ $(function(){
     }
   });
 
+  // Spaltenfilter (Excel-like)
   $('#reportTable thead tr.filter-row th').each(function(i){
     $('input', this).on('keyup change clear', function(){
       dt.column(i).search(this.value || '').draw();
     });
   });
 
+  // ✅ Status Filter robust (CXL funktioniert auch mit Punkt/Trenner/zusatz)
   $('#statusSelect').on('change', function(){
-    const v=(this.value||'').trim();
-    dt.column(13).search(v ? `^${v}$` : '', true, false).draw();
+    const v=(this.value||'').trim().toUpperCase();
+    if(!v){
+      dt.column(13).search('', true, false).draw();
+      return;
+    }
+    const escaped = v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rx = '\\b' + escaped + '\\b';
+    dt.column(13).search(rx, true, false).draw();
   });
 
-  ['arrFrom','arrTo','depFrom','depTo','pickupOnly','negOnly'].forEach(id=>{
+  // redraw triggers
+  ['arrFrom','arrTo','depFrom','depTo','negOnly'].forEach(id=>{
     document.getElementById(id).addEventListener('change', ()=>dt.draw());
   });
 
   dt.on('draw', updateTotals);
 
   loadTableFromLocal();
-
-  // Auto-Leisure auch für bereits geladene Daten sicherstellen
   applyAutoLeisureAllRows();
   saveTableToLocal();
-
   updateTotals();
 
+  // Editable: Wash checkbox
   $('#reportTable tbody').on('change','input.wash-check',function(){
     const tr=$(this).closest('tr');
     const row=dt.row(tr);
@@ -742,9 +767,10 @@ $(function(){
     data[2]=$(this).prop('checked');
     row.data(data).invalidate();
     saveTableToLocal();
-    dt.draw(); // so Quickfilter reacts immediately
+    dt.draw();
   });
 
+  // Editable: Market dropdown
   $('#reportTable tbody').on('change','select.market-select',function(){
     const tr=$(this).closest('tr');
     const row=dt.row(tr);
@@ -755,7 +781,6 @@ $(function(){
     dt.draw();
   });
 
-  // init quickfilter buttons state
   setMarketQuick("");
 });
 
@@ -772,14 +797,36 @@ function setMarketQuick(val){
   document.getElementById('mktLeisBtn').classList.toggle('active', marketQuick==="Leisure");
   dt.draw();
 }
+document.getElementById('washQuickBtn').addEventListener('click', ()=> setWashQuick(!washQuickOn));
+document.getElementById('mktAllBtn').addEventListener('click', ()=> setMarketQuick(""));
+document.getElementById('mktCorpBtn').addEventListener('click', ()=> setMarketQuick("Corporate"));
+document.getElementById('mktLeisBtn').addEventListener('click', ()=> setMarketQuick("Leisure"));
 
-document.getElementById('washQuickBtn').addEventListener('click', ()=>{
-  setWashQuick(!washQuickOn);
+/* =================== Schnell-Sortierung Buttons + Reset =================== */
+let sortRevCurDesc = true;
+let sortRevPickDesc = true;
+
+function resetSortUi(){
+  sortRevCurDesc = true;
+  sortRevPickDesc = true;
+  document.getElementById('sortRevCurBtn').textContent = 'Sort: Revenue Cur ↓';
+  document.getElementById('sortRevPickBtn').textContent = 'Sort: Revenue Pick ↓';
+}
+
+document.getElementById('sortRevCurBtn').addEventListener('click', ()=>{
+  dt.order([7, sortRevCurDesc ? 'desc' : 'asc']).draw(); // Revenue Cur
+  document.getElementById('sortRevCurBtn').textContent = `Sort: Revenue Cur ${sortRevCurDesc ? '↓' : '↑'}`;
+  sortRevCurDesc = !sortRevCurDesc;
 });
-
-document.getElementById('mktAllBtn').addEventListener('click', ()=>setMarketQuick(""));
-document.getElementById('mktCorpBtn').addEventListener('click', ()=>setMarketQuick("Corporate"));
-document.getElementById('mktLeisBtn').addEventListener('click', ()=>setMarketQuick("Leisure"));
+document.getElementById('sortRevPickBtn').addEventListener('click', ()=>{
+  dt.order([10, sortRevPickDesc ? 'desc' : 'asc']).draw(); // Revenue Pick
+  document.getElementById('sortRevPickBtn').textContent = `Sort: Revenue Pick ${sortRevPickDesc ? '↓' : '↑'}`;
+  sortRevPickDesc = !sortRevPickDesc;
+});
+document.getElementById('sortResetBtn').addEventListener('click', ()=>{
+  dt.order([]).draw(); // ✅ zurück zur Original-Reihenfolge
+  resetSortUi();
+});
 
 /* =================== Buttons =================== */
 document.getElementById('clearBtn').addEventListener('click', ()=>{
@@ -796,14 +843,13 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
   document.getElementById('arrTo').value='';
   document.getElementById('depFrom').value='';
   document.getElementById('depTo').value='';
-  document.getElementById('pickupOnly').checked=false;
   document.getElementById('negOnly').checked=false;
 
-  // reset quickfilters too
   setWashQuick(false);
   setMarketQuick("");
 
-  dt.draw();
+  dt.order([]).draw();
+  resetSortUi();
 });
 
 /* =================== Import =================== */
@@ -836,7 +882,6 @@ function addRowsFromOpera(text, sourceName){
     const pickRate=prm>0 ? (pr/prm) : 0;
 
     const statusRaw=(getCell(cols,map,'BOOKING_STATUS') || getCell(cols,map,'BOOKINGSTATUS') || '').trim().toUpperCase();
-
     const accName = getCell(cols,map,'NVL_ACCOUNT_NAME_AGENT_NAME');
 
     dt.row.add([
@@ -869,10 +914,7 @@ document.getElementById('importFiles').addEventListener('change', async (e)=>{
   }
 
   dt.draw();
-
-  // Auto-Leisure nachziehen, falls etwas manuell/alt drin ist
   applyAutoLeisureAllRows();
-
   updateTotals();
   saveTableToLocal();
   e.target.value='';
@@ -944,7 +986,7 @@ document.getElementById('pdfBtn').addEventListener('click', async ()=>{
       doc.setFontSize(10);
       doc.setTextColor(11,42,74);
       doc.text(
-        `Filter Total: Zeilen ${totals.rows} | Cur Rev ${fmtMoney(totals.curRev)} CHF | Pick Rev ${fmtMoney(totals.pickRev)} CHF | ØCur ${fmtMoney(totals.curAvg)} | ØPick ${fmtMoney(totals.pickAvg)}`,
+        `Filter Total: Zeilen ${totals.rows} | RmCur ${Math.round(totals.curRm)} | RmPick ${Math.round(totals.pickRm)} | Cur Rev ${fmtMoney(totals.curRev)} CHF | Pick Rev ${fmtMoney(totals.pickRev)} CHF | ØCur ${fmtMoney(totals.curAvg)} | ØPick ${fmtMoney(totals.pickAvg)}`,
         14, y
       );
     }

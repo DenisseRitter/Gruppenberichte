@@ -572,12 +572,13 @@ function isCurrencyOrVariance(cols,map){
 
 /* =================== Date helpers =================== */
 function parseOperaDate(d){
-  if(!d) return null;
-  const s = String(d).trim();
+  if(d === null || d === undefined) return null;
+  // DataTables can pass strings with NBSP or extra text; normalize and extract first date pattern
+  let s = String(d).replace(/\u00A0/g,' ').trim();
   if(!s) return null;
 
-  // allow "dd.mm.yy", "dd.mm.yyyy", also with "/" as separator
-  let m = s.match(/^(\d{1,2})[\.\/]?(\d{1,2})[\.\/]?(\d{2}|\d{4})$/);
+  // extract dd.mm.yy or dd.mm.yyyy (also "/" or "-" separators), optionally followed by time
+  let m = s.match(/(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2}|\d{4})/);
   if(m){
     const day = Number(m[1]);
     const mon = Number(m[2]);
@@ -586,9 +587,8 @@ function parseOperaDate(d){
     return new Date(Date.UTC(year, mon-1, day));
   }
 
-  // allow ISO "yyyy-mm-dd" or with time "yyyy-mm-ddTHH:MM..."
-  const iso = s.split(/[ T]/)[0];
-  m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  // extract ISO yyyy-mm-dd (optionally with time)
+  m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
   if(m){
     const year = Number(m[1]), mon = Number(m[2]), day = Number(m[3]);
     return new Date(Date.UTC(year, mon-1, day));

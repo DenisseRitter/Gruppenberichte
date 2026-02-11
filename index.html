@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Gruppenbericht – FINAL (CLX→CXL Fix + Charts)</title>
+<title>Gruppenbericht – FINAL (CLX→CXL Fix + Charts + HTML-Snapshot)</title>
 
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
@@ -200,6 +200,13 @@
     accent-color:var(--blue);
     cursor:pointer;
   }
+
+  @media print{
+    header, .bar, .dt-buttons, .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate { display:none !important; }
+    .card{ box-shadow:none; border:0; }
+    table{ font-size:10px !important; }
+    @page { size:A4 landscape; margin:10mm; }
+  }
 </style>
 </head>
 
@@ -208,7 +215,7 @@
   <img src="Logo_ibis_RGB.png" alt="Logo_ibis_RGB">
   <div>
     <h1>Gruppenbericht</h1>
-    <div class="sub">Fix: Opera liefert CLX (nicht CXL) → CLX wird als CXL behandelt • Charts: gefilterte Zeilen + Market-Split</div>
+    <div class="sub">Fix: Opera liefert CLX (nicht CXL) → CLX wird als CXL behandelt • Charts: gefilterte Zeilen + Market-Split • Snapshot teilen</div>
   </div>
 </header>
 
@@ -216,6 +223,7 @@
   <button class="btn secondary" id="resetBtn" type="button">Filter zurücksetzen</button>
   <button class="btn secondary" id="clearBtn" type="button">Tabelle leeren</button>
   <button class="btn" id="pdfBtn" type="button">PDF herunterladen</button>
+  <button class="btn" id="saveHtmlBtn" type="button">HTML mit Daten speichern</button>
 
   <button class="btn secondary" id="sortRevCurBtn" type="button">Sort: Revenue Cur ↓</button>
   <button class="btn secondary" id="sortRevPickBtn" type="button">Sort: Revenue Pick ↓</button>
@@ -367,7 +375,7 @@
 /* =================== Schweizer Format + CHF + Negative Klammern =================== */
 function toNumber(x){
   if (x === null || x === undefined) return 0;
-  const s = String(x).trim().replace(/\s/g,'').replace(/CHF/gi,'').replace(/,/g,'');
+  const s = String(x).trim().replace(/\\s/g,'').replace(/CHF/gi,'').replace(/,/g,'');
   const n = Number(s);
   return Number.isFinite(n) ? n : 0;
 }
@@ -409,8 +417,8 @@ function normAccount(s){
     .toUpperCase()
     .replace(/[’']/g, "'")
     .replace(/[“”"]/g, '"')
-    .replace(/\u00A0/g, ' ')
-    .replace(/\s+/g, " ")
+    .replace(/\\u00A0/g, ' ')
+    .replace(/\\s+/g, " ")
     .trim();
 }
 function shouldAutoLeisure(accountName){
@@ -493,13 +501,43 @@ function detectDelimiter(line){
   const semi=(line.match(/;/g)||[]).length;
   return semi>comma?';':',';
 }
+
+/* ✅ Header-Normalisierung: BOM/Leerzeichen/Underscore/Quotes egal */
+function normHeaderKey(name){
+  return String(name ?? '')
+    .replace(/^\uFEFF/, '')          // BOM
+    .replace(/["']/g,'')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g,'');       // entfernt _ / Leerzeichen / Sonderzeichen
+}
 function buildHeaderMap(headerRow){
-  const map={}; headerRow.forEach((name,idx)=>{ const k=(name||'').trim(); if(k) map[k]=idx; });
+  const map={};
+  headerRow.forEach((name,idx)=>{
+    const k = normHeaderKey(name);
+    if(k) map[k]=idx;
+  });
   return map;
 }
 function getCell(cols,map,name){
-  const idx=map[name]; if(idx===undefined) return ''; return cols[idx] ?? '';
+  const idx = map[normHeaderKey(name)];
+  if(idx===undefined) return '';
+  return cols[idx] ?? '';
 }
+
+/* ✅ Finde Header-Zeile (Opera hat manchmal Report-Zeilen vor dem Header) */
+function findHeaderRowIndex(rows){
+  const wantedA = normHeaderKey('ARRIVALDATE');
+  const wantedD = normHeaderKey('DEPARTUREDATE');
+  const maxScan = Math.min(rows.length, 40);
+  for(let i=0;i<maxScan;i++){
+    const r = rows[i] || [];
+    const keys = r.map(normHeaderKey);
+    if(keys.includes(wantedA) && keys.includes(wantedD)) return i;
+  }
+  return -1;
+}
+
 function isFooterOrLabel(firstCell){
   const v=(firstCell||'').trim();
   return v.startsWith('CF_NAME_FILTER') || v==='Filter' || v.startsWith('CF_');
@@ -518,30 +556,30 @@ function isCurrencyOrVariance(cols,map){
   return hay.includes('currency') || hay.includes('variance') || hay==='chf' || hay.includes(' chf');
 }
 
+
 /* =================== Date helpers =================== */
 function parseOperaDate(d){
   if(!d) return null;
-  const m=String(d).trim().match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+  const m=String(d).trim().match(/^(\\d{2})\\.(\\d{2})\\.(\\d{2})$/);
   if(!m) return null;
   return new Date(Date.UTC(2000+Number(m[3]),Number(m[2])-1,Number(m[1])));
 }
 function parseISODate(s){
   if(!s) return null;
-  const m=String(s).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const m=String(s).trim().match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
   if(!m) return null;
   return new Date(Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])));
 }
 
 /* =================== Status Fix (CLX → CXL) =================== */
 function normStatusRaw(s){
-  return String(s ?? "").toUpperCase().replace(/\u00A0/g,' ').trim();
+  return String(s ?? "").toUpperCase().replace(/\\u00A0/g,' ').trim();
 }
 function statusCodeFromAnyText(s){
   const raw = normStatusRaw(s);
-  const letters = raw.replace(/[^A-Z]/g,''); // z.B. "CLX " -> "CLX"
+  const letters = raw.replace(/[^A-Z]/g,'');
   if(!letters) return "OTHER";
 
-  // ✅ WICHTIG: Opera liefert CLX, UI soll CXL zeigen/filtern
   if (letters === "CLX") return "CXL";
   if (letters.includes("CANCEL") || letters.includes("CANCELL")) return "CXL";
   if (letters.includes("CXL")) return "CXL";
@@ -561,8 +599,9 @@ function statusBucketFromCode(code){
 
 /* Quickfilter state */
 let washQuickOn = false;
-let marketQuick = ""; // "", "Corporate", "Leisure"
+let marketQuick = "";
 
+/* DataTables global search hook */
 $.fn.dataTable.ext.search.push(function(settings, data){
   if(settings.nTable.id !== 'reportTable') return true;
 
@@ -573,7 +612,6 @@ $.fn.dataTable.ext.search.push(function(settings, data){
     if (String(data[3]).toLowerCase() !== marketQuick.toLowerCase()) return false;
   }
 
-  // Date range top (Anreise/Abreise)
   const arr = parseOperaDate(data[4]);
   const dep = parseOperaDate(data[5]);
 
@@ -598,15 +636,12 @@ $.fn.dataTable.ext.search.push(function(settings, data){
   if(negOnly){
     if(!(toNumber(data[7])<0 || toNumber(data[10])<0)) return false;
   }
-
   return true;
 });
 
 /* =================== Storage =================== */
 let dt;
 const STORAGE_KEY="gruppenbericht_data_clx_cxl_fix_v1";
-
-/* Hidden status code column index */
 const COL_STATUS = 13;
 const COL_STATUSCODE = 15;
 
@@ -637,8 +672,7 @@ function loadTableFromLocal(){
       const rr=[...r];
       rr[2]=washToBool(rr[2]);
       rr[3]=shouldAutoLeisure(rr[1]) ? "Leisure" : marketNormalize(rr[3]);
-      if(rr.length<=COL_STATUSCODE) rr[COL_STATUSCODE]=statusCodeFromAnyText(rr[COL_STATUS]);
-      else rr[COL_STATUSCODE]=statusCodeFromAnyText(rr[COL_STATUS]);
+      rr[COL_STATUSCODE]=statusCodeFromAnyText(rr[COL_STATUS]);
       dt.row.add(rr);
     });
     dt.draw();
@@ -849,53 +883,50 @@ function downloadExcelWithCharts(){
   const totals = computeTotals(dt.rows({search:'applied'}).data().toArray());
   const stamp = new Date().toISOString().slice(0,10);
 
-  const css = `
-    body{font-family:Calibri,Arial,sans-serif;font-size:11pt;}
-    h1{font-size:16pt;margin:0 0 6px 0;}
-    .meta{margin:0 0 10px 0;color:#444;}
-    table{border-collapse:collapse;width:100%;}
-    th,td{border:1px solid #bbb;padding:4px 6px;white-space:nowrap;}
-    th{background:#dde7f3;font-weight:bold;}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px 0;}
-    .box{border:1px solid #bbb;padding:8px;}
-    .cap{font-weight:bold;margin:0 0 6px 0;}
-    img{max-width:100%;height:auto;}
-  `;
+  const css = ""
+    + "body{font-family:Calibri,Arial,sans-serif;font-size:11pt;}"
+    + "h1{font-size:16pt;margin:0 0 6px 0;}"
+    + ".meta{margin:0 0 10px 0;color:#444;}"
+    + "table{border-collapse:collapse;width:100%;}"
+    + "th,td{border:1px solid #bbb;padding:4px 6px;white-space:nowrap;}"
+    + "th{background:#dde7f3;font-weight:bold;}"
+    + ".grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px 0;}"
+    + ".box{border:1px solid #bbb;padding:8px;}"
+    + ".cap{font-weight:bold;margin:0 0 6px 0;}"
+    + "img{max-width:100%;height:auto;}";
 
-  const chartBlock = `
-    <div class="grid">
-      <div class="box"><div class="cap">Revenue Cur vs Pick</div>${charts.ch_rev_split ? `<img src="${charts.ch_rev_split}">` : `<i>Chart fehlt</i>`}</div>
-      <div class="box"><div class="cap">Revenue nach Status</div>${charts.ch_status_stack ? `<img src="${charts.ch_status_stack}">` : `<i>Chart fehlt</i>`}</div>
-      <div class="box"><div class="cap">Trend KW</div>${charts.ch_trend_kw ? `<img src="${charts.ch_trend_kw}">` : `<i>Chart fehlt</i>`}</div>
-      <div class="box"><div class="cap">Top 10 Business Blocks</div>${charts.ch_top10_bb ? `<img src="${charts.ch_top10_bb}">` : `<i>Chart fehlt</i>`}</div>
-    </div>
-  `;
+  const chartBlock = ""
+    + "<div class=\"grid\">"
+    + "<div class=\"box\"><div class=\"cap\">Revenue Cur vs Pick</div>" + (charts.ch_rev_split ? ("<img src=\"" + charts.ch_rev_split + "\">") : "<i>Chart fehlt</i>") + "</div>"
+    + "<div class=\"box\"><div class=\"cap\">Revenue nach Status</div>" + (charts.ch_status_stack ? ("<img src=\"" + charts.ch_status_stack + "\">") : "<i>Chart fehlt</i>") + "</div>"
+    + "<div class=\"box\"><div class=\"cap\">Trend KW</div>" + (charts.ch_trend_kw ? ("<img src=\"" + charts.ch_trend_kw + "\">") : "<i>Chart fehlt</i>") + "</div>"
+    + "<div class=\"box\"><div class=\"cap\">Top 10 Business Blocks</div>" + (charts.ch_top10_bb ? ("<img src=\"" + charts.ch_top10_bb + "\">") : "<i>Chart fehlt</i>") + "</div>"
+    + "</div>";
 
-  const tableHtml = `
-    <table>
-      <thead><tr>${t.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-      <tbody>
-        ${t.body.map(row=>`<tr>${row.map(c=>`<td>${String(c).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</td>`).join('')}</tr>`).join('')}
-      </tbody>
-    </table>
-  `;
+  const tableHtml = ""
+    + "<table><thead><tr>" + t.head.map(h=>"<th>"+h+"</th>").join("") + "</tr></thead><tbody>"
+    + t.body.map(row=>"<tr>"+row.map(c=>"<td>"+String(c).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+"</td>").join("")+"</tr>").join("")
+    + "</tbody></table>";
 
-  const html = `
-    <html><head><meta charset="utf-8"><style>${css}</style></head><body>
-      <h1>Gruppenbericht</h1>
-      <div class="meta">
-        Stand: ${stamp} | Zeilen: ${totals.rows} | RmCur: ${Math.round(totals.curRm)} | RmPick: ${Math.round(totals.pickRm)} |
-        Cur Rev: ${fmtMoney(totals.curRev)} CHF | Pick Rev: ${fmtMoney(totals.pickRev)} CHF
-      </div>
-      ${chartBlock}
-      ${tableHtml}
-    </body></html>
-  `;
+  const html = ""
+    + "<html><head><meta charset=\"utf-8\"><style>" + css + "</style></head><body>"
+    + "<h1>Gruppenbericht</h1>"
+    + "<div class=\"meta\">"
+    + "Stand: " + stamp
+    + " | Zeilen: " + totals.rows
+    + " | RmCur: " + Math.round(totals.curRm)
+    + " | RmPick: " + Math.round(totals.pickRm)
+    + " | Cur Rev: " + fmtMoney(totals.curRev) + " CHF"
+    + " | Pick Rev: " + fmtMoney(totals.pickRev) + " CHF"
+    + "</div>"
+    + chartBlock
+    + tableHtml
+    + "</body></html>";
 
   const blob = new Blob([html], {type: "application/vnd.ms-excel;charset=utf-8"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `Gruppenbericht_${stamp}_mit_Charts.xls`;
+  a.download = "Gruppenbericht_" + stamp + "_mit_Charts.xls";
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -932,7 +963,7 @@ $(function(){
           }
         }
       },
-      { text:'Excel (mit Charts)', action:()=>downloadExcelWithCharts() },
+      { text:'Excel (mit Charts)', action:function(){ downloadExcelWithCharts(); } },
       { extend:'colvis', text:'Spalten auswählen' }
     ],
     columnDefs:[
@@ -948,10 +979,7 @@ $(function(){
       { targets:[7,10], render:renderCHF },
       { targets:[8,11], render:renderRate },
 
-      // ✅ hidden StatusCode column searchable
       { targets: COL_STATUSCODE, visible:false, searchable:true },
-
-      // ✅ Status sortiert nach StatusCode, nicht nach raw
       { targets: COL_STATUS, orderData: [COL_STATUSCODE] }
     ],
     rowCallback:function(row,data){
@@ -963,14 +991,15 @@ $(function(){
       if(toNumber(data[10])<0) $('td', row).eq(10).addClass('neg');
     }
   });
+  // ✅ expose dt for snapshot/injected loader
+  window.dt = dt;
 
   // Spaltenfilter (Excel-like)
   $('#reportTable thead tr.filter-row th').each(function(i){
     $('input', this).on('keyup change clear', function(){
       const val = this.value || '';
-      // Status Input filtert hidden StatusCode (damit "cxl" / "clx" / "c" klappt)
       if(i === COL_STATUS){
-        dt.column(COL_STATUSCODE).search(val, false, true).draw(); // contains
+        dt.column(COL_STATUSCODE).search(val, false, true).draw();
         return;
       }
       if(i === COL_STATUSCODE) return;
@@ -978,7 +1007,7 @@ $(function(){
     });
   });
 
-  // ✅ Status Dropdown filtert StatusCode exakt
+  // Status Dropdown filtert StatusCode exakt
   $('#statusSelect').on('change', function(){
     const v=(this.value||'').trim().toUpperCase();
     if(!v){
@@ -988,14 +1017,26 @@ $(function(){
     dt.column(COL_STATUSCODE).search('^'+v+'$', true, false).draw();
   });
 
-  // redraw triggers
   ['arrFrom','arrTo','depFrom','depTo','negOnly'].forEach(id=>{
-    document.getElementById(id).addEventListener('change', ()=>dt.draw());
+    document.getElementById(id).addEventListener('change', function(){ dt.draw(); });
   });
 
-  dt.on('draw', ()=>{ updateTotals(); upsertCharts(); });
+  dt.on('draw', function(){ updateTotals(); upsertCharts(); });
 
-  loadTableFromLocal();
+  // preload injection (when opening snapshot)
+  try{
+    if(Array.isArray(window.__GB_PRELOADED_ROWS__) && window.__GB_PRELOADED_ROWS__.length){
+      dt.clear();
+      window.__GB_PRELOADED_ROWS__.forEach(function(r){ dt.row.add(r); });
+      dt.draw();
+    }else{
+      loadTableFromLocal();
+    }
+  }catch(e){
+    console.warn(e);
+    loadTableFromLocal();
+  }
+
   applyAutoLeisureAllRows();
   saveTableToLocal();
   updateTotals();
@@ -1039,36 +1080,36 @@ function setMarketQuick(val){
   document.getElementById('mktLeisBtn').classList.toggle('active', marketQuick==="Leisure");
   dt.draw();
 }
-document.getElementById('washQuickBtn').addEventListener('click', ()=> setWashQuick(!washQuickOn));
-document.getElementById('mktAllBtn').addEventListener('click', ()=> setMarketQuick(""));
-document.getElementById('mktCorpBtn').addEventListener('click', ()=> setMarketQuick("Corporate"));
-document.getElementById('mktLeisBtn').addEventListener('click', ()=> setMarketQuick("Leisure"));
+document.getElementById('washQuickBtn').addEventListener('click', function(){ setWashQuick(!washQuickOn); });
+document.getElementById('mktAllBtn').addEventListener('click', function(){ setMarketQuick(""); });
+document.getElementById('mktCorpBtn').addEventListener('click', function(){ setMarketQuick("Corporate"); });
+document.getElementById('mktLeisBtn').addEventListener('click', function(){ setMarketQuick("Leisure"); });
 
 /* =================== Schnell-Sortierung Buttons + Reset =================== */
-document.getElementById('sortRevCurBtn').addEventListener('click', ()=>{
+document.getElementById('sortRevCurBtn').addEventListener('click', function(){
   dt.order([7, sortRevCurDesc ? 'desc' : 'asc']).draw();
   sortRevCurDesc = !sortRevCurDesc;
 });
-document.getElementById('sortRevPickBtn').addEventListener('click', ()=>{
+document.getElementById('sortRevPickBtn').addEventListener('click', function(){
   dt.order([10, sortRevPickDesc ? 'desc' : 'asc']).draw();
   sortRevPickDesc = !sortRevPickDesc;
 });
-document.getElementById('sortResetBtn').addEventListener('click', ()=>{
+document.getElementById('sortResetBtn').addEventListener('click', function(){
   dt.order([]).draw();
 });
 
 /* =================== Buttons =================== */
-document.getElementById('chartsResetBtn').addEventListener('click', ()=>{ if(dt) dt.draw(); });
+document.getElementById('chartsResetBtn').addEventListener('click', function(){ if(dt) dt.draw(); });
 
-document.getElementById('clearBtn').addEventListener('click', ()=>{
+document.getElementById('clearBtn').addEventListener('click', function(){
   dt.clear().draw();
   updateTotals();
-  localStorage.removeItem(STORAGE_KEY);
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
 });
-document.getElementById('resetBtn').addEventListener('click', ()=>{
+document.getElementById('resetBtn').addEventListener('click', function(){
   dt.columns().search('');
   dt.search('');
-  document.querySelectorAll('.col-filter').forEach(i=>i.value='');
+  document.querySelectorAll('.col-filter').forEach(function(i){ i.value=''; });
   document.getElementById('statusSelect').value='';
   document.getElementById('arrFrom').value='';
   document.getElementById('arrTo').value='';
@@ -1085,19 +1126,27 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
 /* =================== Import =================== */
 function addRowsFromOpera(text, sourceName){
   const firstLine=(text.split(/\r?\n/).find(l=>l.trim().length)||'');
-  const delim=detectDelimiter(firstLine); // ✅ TAB wird korrekt erkannt
+  const delim=detectDelimiter(firstLine); // ✅ TAB/CSV erkannt
   const rows=parseDelimited(text, delim);
   if(!rows.length) return;
 
-  const header=rows[0];
-  const map=buildHeaderMap(header);
-
-  if(map['ARRIVALDATE']===undefined || map['DEPARTUREDATE']===undefined){
-    alert('Import-Fehler: Header fehlt. Zeile 1 muss Spaltennamen enthalten (ARRIVALDATE/DEPARTUREDATE/...).');
+  // ✅ Header kann nicht zwingend in Zeile 1 sein (Opera-Report hat manchmal Vorspann)
+  const hIdx = findHeaderRowIndex(rows);
+  if(hIdx < 0){
+    alert('Import-Fehler: Header nicht gefunden. Bitte exportiere als "Delimited Data" (TAB) inkl. Spaltennamen.');
     return;
   }
 
-  for(let i=1;i<rows.length;i++){
+  const header=rows[hIdx];
+  const map=buildHeaderMap(header);
+
+  // ✅ robust: ARRIVALDATE/DEPARTUREDATE wird normalisiert erkannt
+  if(map[normHeaderKey('ARRIVALDATE')]===undefined || map[normHeaderKey('DEPARTUREDATE')]===undefined){
+    alert('Import-Fehler: Header fehlt. Zeile mit Spaltennamen muss ARRIVALDATE/DEPARTUREDATE enthalten.');
+    return;
+  }
+
+  for(let i=hIdx+1;i<rows.length;i++){
     const cols=rows[i];
     if(!cols || !cols.length) continue;
 
@@ -1112,7 +1161,7 @@ function addRowsFromOpera(text, sourceName){
     const pickRate=prm>0 ? (pr/prm) : 0;
 
     const statusRaw = normStatusRaw(getCell(cols,map,'BOOKING_STATUS') || getCell(cols,map,'BOOKINGSTATUS') || '');
-    const statusCode = statusCodeFromAnyText(statusRaw); // ✅ CLX wird hier zu CXL
+    const statusCode = statusCodeFromAnyText(statusRaw); // ✅ CLX → CXL
 
     const accName = getCell(cols,map,'NVL_ACCOUNT_NAME_AGENT_NAME');
 
@@ -1137,7 +1186,8 @@ function addRowsFromOpera(text, sourceName){
   }
 }
 
-document.getElementById('importFiles').addEventListener('change', async (e)=>{
+
+document.getElementById('importFiles').addEventListener('change', async function(e){
   const files=Array.from(e.target.files||[]);
   if(!files.length) return;
 
@@ -1154,7 +1204,7 @@ document.getElementById('importFiles').addEventListener('change', async (e)=>{
 });
 
 /* =================== PDF Export (Logo entfernt; Charts + Tabelle) =================== */
-document.getElementById('pdfBtn').addEventListener('click', async ()=>{
+document.getElementById('pdfBtn').addEventListener('click', async function(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
   const stamp=new Date().toISOString().slice(0,10);
@@ -1178,7 +1228,7 @@ document.getElementById('pdfBtn').addEventListener('click', async ()=>{
   doc.setFontSize(9);
   charts.forEach(c=>{
     const canvas = document.getElementById(c.id);
-    const url = canvas?.toDataURL ? canvas.toDataURL("image/png",1.0) : null;
+    const url = canvas && canvas.toDataURL ? canvas.toDataURL("image/png",1.0) : null;
     doc.text(c.title, c.x, c.y-3);
     if(url){
       try{ doc.addImage(url,'PNG',c.x,c.y,c.w,c.h); }catch(e){}
@@ -1218,7 +1268,7 @@ document.getElementById('pdfBtn').addEventListener('click', async ()=>{
   }));
 
   doc.autoTable({
-    head, body,
+    head: head, body: body,
     startY:24,
     styles:{fontSize:8, cellPadding:2, textColor:[29,29,31]},
     headStyles:{fillColor:[11,42,74], textColor:[212,175,55]},
@@ -1228,14 +1278,79 @@ document.getElementById('pdfBtn').addEventListener('click', async ()=>{
       doc.setFontSize(10);
       doc.setTextColor(11,42,74);
       doc.text(
-        `Filter Total: Zeilen ${totals.rows} | RmCur ${Math.round(totals.curRm)} | RmPick ${Math.round(totals.pickRm)} | Cur Rev ${fmtMoney(totals.curRev)} CHF | Pick Rev ${fmtMoney(totals.pickRev)} CHF`,
+        "Filter Total: Zeilen " + totals.rows
+        + " | RmCur " + Math.round(totals.curRm)
+        + " | RmPick " + Math.round(totals.pickRm)
+        + " | Cur Rev " + fmtMoney(totals.curRev) + " CHF"
+        + " | Pick Rev " + fmtMoney(totals.pickRev) + " CHF",
         14, y
       );
     }
   });
 
-  doc.save(`Gruppenbericht_${stamp}.pdf`);
+  doc.save("Gruppenbericht_" + stamp + ".pdf");
 });
+
+/* =================== ✅ HTML mit Daten speichern (Snapshot) =================== */
+function __gb_snapshotRows(){
+  if(typeof dt==='undefined' || !dt) return [];
+  var rows = dt.rows().data().toArray().map(function(r){ return Array.prototype.slice.call(r); });
+  rows.forEach(function(r){
+    r[2] = washToBool(r[2]);
+    r[3] = shouldAutoLeisure(r[1]) ? "Leisure" : marketNormalize(r[3]);
+    ensureStatusCode(r);
+  });
+  return rows;
+}
+function __gb_safeJsonForScript(obj){
+  return JSON.stringify(obj).replace(/</g, "\\u003c");
+}
+function downloadHtmlWithData(){
+  if(typeof dt==='undefined' || !dt){ alert("Tabelle ist noch nicht bereit."); return; }
+
+  var stamp = new Date().toISOString().slice(0,10);
+  var rows = __gb_snapshotRows();
+  var payload = __gb_safeJsonForScript(rows);
+
+  var html = document.documentElement.outerHTML;
+
+  // WICHTIG: kein echtes </scr"+"ipt> in Strings
+  var openScript = "<scr" + "ipt>";
+  var closeScript = "<" + "/scr" + "ipt>";
+
+  var inject =
+    openScript +
+      "window.__GB_PRELOADED_ROWS__=" + payload + ";" +
+      "window.addEventListener('load',function(){" +
+        "setTimeout(function(){" +
+          "try{" +
+            "if(window.dt && Array.isArray(window.__GB_PRELOADED_ROWS__)){" +
+              "dt.clear();" +
+              "window.__GB_PRELOADED_ROWS__.forEach(function(r){dt.row.add(r);});" +
+              "dt.draw();" +
+              "if(window.applyAutoLeisureAllRows) applyAutoLeisureAllRows();" +
+              "if(window.updateTotals) updateTotals();" +
+              "if(window.upsertCharts) upsertCharts();" +
+              "if(window.saveTableToLocal) saveTableToLocal();" +
+            "}" +
+          "}catch(e){console.warn(e);}" +
+        "},350);" +
+      "});" +
+    closeScript +
+    "</body>";
+
+  html = html.replace("</body>", inject);
+
+  var blob = new Blob([html], {type:"text/html;charset=utf-8"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Gruppenbericht_mit_Daten_" + stamp + ".html";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+}
+document.getElementById("saveHtmlBtn").addEventListener("click", downloadHtmlWithData);
 </script>
 </body>
 </html>

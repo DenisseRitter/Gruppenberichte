@@ -263,6 +263,19 @@
   </div>
 
   <div class="ctrl">
+    <label>Monat (Anreise):</label>
+    <select id="monthSelect" title="Filter nach Anreise-Monat">
+      <option value="">Alle</option>
+      <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mär</option>
+      <option value="4">Apr</option><option value="5">Mai</option><option value="6">Jun</option>
+      <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+      <option value="10">Okt</option><option value="11">Nov</option><option value="12">Dez</option>
+    </select>
+  </div>
+
+  <button class="btn secondary" id="sortMonthBtn" type="button" title="Sortierung nach Anreise-Monat (und Datum)">Sort: Monat (Anreise) ↑</button>
+
+  <div class="ctrl">
     <div class="check">
       <input id="negOnly" type="checkbox">
       <label for="negOnly">Nur negative Zeilen (Rev Cur/Pick &lt; 0)</label>
@@ -570,6 +583,25 @@ function parseISODate(s){
   if(!m) return null;
   return new Date(Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])));
 }
+function operaDateKey(d){
+  const dt = parseOperaDate(d);
+  if(!dt) return 0;
+  const y = dt.getUTCFullYear();
+  const m = dt.getUTCMonth()+1;
+  const day = dt.getUTCDate();
+  return (y*10000) + (m*100) + day; // YYYYMMDD
+}
+function operaArrMonth(d){
+  const dt = parseOperaDate(d);
+  return dt ? (dt.getUTCMonth()+1) : null; // 1..12
+}
+function renderOperaDateSort(data, type){
+  if(type === 'sort' || type === 'type'){
+    return operaDateKey(data);
+  }
+  return data;
+}
+
 
 /* =================== Status Fix (CLX → CXL) =================== */
 function normStatusRaw(s){
@@ -600,6 +632,7 @@ function statusBucketFromCode(code){
 /* Quickfilter state */
 let washQuickOn = false;
 let marketQuick = "";
+let monthQuick = ""; // Anreise-Monat (1..12)
 
 /* DataTables global search hook */
 $.fn.dataTable.ext.search.push(function(settings, data){
@@ -610,6 +643,24 @@ $.fn.dataTable.ext.search.push(function(settings, data){
   }
   if (marketQuick){
     if (String(data[3]).toLowerCase() !== marketQuick.toLowerCase()) return false;
+  }
+
+  if (monthQuick){
+    const arrM = parseOperaDate(data[4]);
+    const depM = parseOperaDate(data[5]) || arrM;
+    if(!arrM) return false;
+    const monthIdx = Number(monthQuick);
+    const a = arrM.getTime();
+    const d = depM ? depM.getTime() : a;
+    const yStart = arrM.getUTCFullYear();
+    const yEnd = (depM || arrM).getUTCFullYear();
+    let ok = false;
+    for(let y=yStart; y<=yEnd; y++){
+      const ms = Date.UTC(y, monthIdx-1, 1);
+      const me = Date.UTC(y, monthIdx, 1); // next month start
+      if(a < me && d >= ms){ ok = true; break; } // overlap
+    }
+    if(!ok) return false;
   }
 
   const arr = parseOperaDate(data[4]);
@@ -936,6 +987,7 @@ function downloadExcelWithCharts(){
 /* =================== DataTable =================== */
 let sortRevCurDesc = true;
 let sortRevPickDesc = true;
+let sortMonthAsc = true;
 
 $(function(){
   dt = $('#reportTable').DataTable({
@@ -971,6 +1023,8 @@ $(function(){
       { targets:1, className:'accol', width:'440px' },
       { targets:3, className:'mktcol', width:'135px' },
       { targets:[6,9], className:'rmcol', width:'88px' },
+
+      { targets:[4,5], render:renderOperaDateSort },
 
       { targets:2, render:renderWash },
       { targets:3, render:renderMarket },
@@ -1015,6 +1069,12 @@ $(function(){
       return;
     }
     dt.column(COL_STATUSCODE).search('^'+v+'$', true, false).draw();
+  });
+
+  // Monat Dropdown: zeigt Buchungen, deren Zeitraum den Monat schneidet (Anreise/Abreise)
+  $('#monthSelect').on('change', function(){
+    monthQuick = (this.value || "").trim();
+    dt.draw();
   });
 
   ['arrFrom','arrTo','depFrom','depTo','negOnly'].forEach(id=>{
@@ -1098,6 +1158,14 @@ document.getElementById('sortResetBtn').addEventListener('click', function(){
   dt.order([]).draw();
 });
 
+
+document.getElementById('sortMonthBtn').addEventListener('click', function(){
+  dt.order([[4, sortMonthAsc ? 'asc' : 'desc']]).draw();
+  this.textContent = 'Sort: Monat (Anreise) ' + (sortMonthAsc ? '↑' : '↓');
+  sortMonthAsc = !sortMonthAsc;
+});
+
+
 /* =================== Buttons =================== */
 document.getElementById('chartsResetBtn').addEventListener('click', function(){ if(dt) dt.draw(); });
 
@@ -1111,6 +1179,8 @@ document.getElementById('resetBtn').addEventListener('click', function(){
   dt.search('');
   document.querySelectorAll('.col-filter').forEach(function(i){ i.value=''; });
   document.getElementById('statusSelect').value='';
+  document.getElementById('monthSelect').value='';
+  monthQuick='';
   document.getElementById('arrFrom').value='';
   document.getElementById('arrTo').value='';
   document.getElementById('depFrom').value='';

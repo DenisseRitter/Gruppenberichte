@@ -388,7 +388,7 @@
 /* =================== Schweizer Format + CHF + Negative Klammern =================== */
 function toNumber(x){
   if (x === null || x === undefined) return 0;
-  const s = String(x).trim().replace(/\\s/g,'').replace(/CHF/gi,'').replace(/,/g,'');
+  const s = String(x).trim().replace(/\s/g,'').replace(/CHF/gi,'').replace(/,/g,'');
   const n = Number(s);
   return Number.isFinite(n) ? n : 0;
 }
@@ -430,8 +430,8 @@ function normAccount(s){
     .toUpperCase()
     .replace(/[’']/g, "'")
     .replace(/[“”"]/g, '"')
-    .replace(/\\u00A0/g, ' ')
-    .replace(/\\s+/g, " ")
+    .replace(/\u00A0/g, ' ')
+    .replace(/\s+/g, " ")
     .trim();
 }
 function shouldAutoLeisure(accountName){
@@ -598,7 +598,7 @@ function parseOperaDate(d){
 }
 function parseISODate(s){
   if(!s) return null;
-  const m=String(s).trim().match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+  const m=String(s).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if(!m) return null;
   return new Date(Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])));
 }
@@ -624,7 +624,7 @@ function renderOperaDateSort(data, type){
 
 /* =================== Status Fix (CLX → CXL) =================== */
 function normStatusRaw(s){
-  return String(s ?? "").toUpperCase().replace(/\\u00A0/g,' ').trim();
+  return String(s ?? "").toUpperCase().replace(/\u00A0/g,' ').trim();
 }
 function statusCodeFromAnyText(s){
   const raw = normStatusRaw(s);
@@ -916,6 +916,8 @@ function upsertCharts(){
 
 /* =================== Excel (mit Charts) =================== */
 function stripHtml(s){ return String(s ?? "").replace(/<[^>]*>/g,'').trim(); }
+
+/* ✅ Export: Werte als echte Zahlen (ohne CHF) */
 function buildAppliedTableForExport(){
   const visibleCols=[];
   dt.columns().every(function(i){ if(this.visible() && i !== COL_STATUSCODE) visibleCols.push(i); });
@@ -928,16 +930,22 @@ function buildAppliedTableForExport(){
 
   const rows=dt.rows({search:'applied'}).data().toArray();
   const head = visibleCols.map(i=> colNames[i] || `Col ${i}`);
+
+  // Liefert value + isNumber (für HTML/XLS mso-number-format)
   const body = rows.map(r=> visibleCols.map(i=>{
-    if(i===2) return washDisplay(r[2]);
-    if(i===3) return marketNormalize(r[3]);
-    if(i===7 || i===10) return fmtMoney(toNumber(r[i]))+" CHF";
-    if(i===8 || i===11) return fmtMoney(toNumber(r[i]));
-    if(i===6 || i===9) return String(Math.round(toNumber(r[i])));
-    return stripHtml(r[i]);
+    if(i===2) return { value: washDisplay(r[2]), isNumber:false };
+    if(i===3) return { value: marketNormalize(r[3]), isNumber:false };
+
+    if(i===7 || i===10) return { value: toNumber(r[i]), isNumber:true }; // Revenue
+    if(i===8 || i===11) return { value: toNumber(r[i]), isNumber:true }; // Avg Rate
+    if(i===6 || i===9)  return { value: Math.round(toNumber(r[i])), isNumber:true }; // Roomnights
+
+    return { value: stripHtml(r[i]), isNumber:false };
   }));
-  return { head, body };
+
+  return { head, body, visibleCols };
 }
+
 function getChartDataUrls(){
   const ids = ["ch_rev_split","ch_status_stack","ch_trend_kw","ch_top10_bb"];
   const out = {};
@@ -973,9 +981,27 @@ function downloadExcelWithCharts(){
     + "<div class=\"box\"><div class=\"cap\">Top 10 Business Blocks</div>" + (charts.ch_top10_bb ? ("<img src=\"" + charts.ch_top10_bb + "\">") : "<i>Chart fehlt</i>") + "</div>"
     + "</div>";
 
+  // ✅ Tabelle: Zahlen als Zahlen exportieren (ohne CHF)
   const tableHtml = ""
-    + "<table><thead><tr>" + t.head.map(h=>"<th>"+h+"</th>").join("") + "</tr></thead><tbody>"
-    + t.body.map(row=>"<tr>"+row.map(c=>"<td>"+String(c).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+"</td>").join("")+"</tr>").join("")
+    + "<table><thead><tr>"
+    + t.head.map(h=>"<th>"+String(h).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+"</th>").join("")
+    + "</tr></thead><tbody>"
+    + t.body.map(row=>"<tr>"+row.map(cell=>{
+        const v = cell?.value;
+
+        if(cell?.isNumber){
+          const num = Number(v);
+          const safe = Number.isFinite(num) ? String(num) : "0";
+          // 0.00 ist ok für Revenue/Rate; für Roomnights ist es trotzdem Zahl (Excel kann formatieren)
+          return "<td style=\"mso-number-format:0.00;\">" + safe + "</td>";
+        }
+
+        const s = String(v ?? "")
+          .replace(/&/g,"&amp;")
+          .replace(/</g,"&lt;")
+          .replace(/>/g,"&gt;");
+        return "<td>" + s + "</td>";
+      }).join("")+"</tr>").join("")
     + "</tbody></table>";
 
   const html = ""
@@ -986,8 +1012,8 @@ function downloadExcelWithCharts(){
     + " | Zeilen: " + totals.rows
     + " | RmCur: " + Math.round(totals.curRm)
     + " | RmPick: " + Math.round(totals.pickRm)
-    + " | Cur Rev: " + fmtMoney(totals.curRev) + " CHF"
-    + " | Pick Rev: " + fmtMoney(totals.pickRev) + " CHF"
+    + " | Cur Rev: " + fmt2(totals.curRev)     // ✅ ohne CHF
+    + " | Pick Rev: " + fmt2(totals.pickRev)   // ✅ ohne CHF
     + "</div>"
     + chartBlock
     + tableHtml
@@ -1027,9 +1053,15 @@ $(function(){
           },
           format:{
             body:function(data,row,col,node){
-              if(col===2) return washToBool($(node).find('input.wash-check').prop('checked')) ? 'true':'false';
+              // ✅ Export ohne CHF + echte Zahlen
+              if(col===2) return washToBool($(node).find('input.wash-check').prop('checked')) ? true : false;
               if(col===3) return marketNormalize($(node).find('select.market-select').val()||'');
-              return String(data).replace(/<[^>]*>/g,'');
+
+              if(col===7 || col===10) return toNumber(data);              // Revenue
+              if(col===8 || col===11) return toNumber(data);              // Avg Rate
+              if(col===6 || col===9)  return Math.round(toNumber(data));  // Roomnights
+
+              return String(data).replace(/<[^>]*>/g,'').trim();
             }
           }
         }
@@ -1129,7 +1161,7 @@ $(function(){
     data[2]=$(this).prop('checked');
     row.data(data).invalidate();
     saveTableToLocal();
-    dt.draw();
+    dt.draw(false);
   });
 
   // Editable: Market dropdown
@@ -1140,7 +1172,7 @@ $(function(){
     data[3]=marketNormalize($(this).val());
     row.data(data).invalidate();
     saveTableToLocal();
-    dt.draw();
+    dt.draw(false);
   });
 
   setMarketQuick("");

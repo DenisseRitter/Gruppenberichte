@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Gruppenbericht – FINAL (CLX→CXL Fix + Charts + HTML-Snapshot)</title>
+<title>Gruppenbericht – FINAL (CLX→CXL Fix + Chg Date + Multi-Status)</title>
 
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
@@ -73,6 +73,16 @@
   }
   .ctrl .tiny{ width: 140px; }
   .ctrl .check{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--blue); font-weight:800; }
+  .status-multi{
+    min-width: 140px;
+    min-height: 110px;
+    font-weight: 700;
+  }
+  .status-hint{
+    font-size:11px;
+    color:var(--muted);
+    margin-left:4px;
+  }
 
   .card{
     background:rgba(255,255,255,.86);
@@ -144,6 +154,7 @@
   th.accol, td.accol{ max-width:440px; overflow:hidden; text-overflow:ellipsis; }
   th.mktcol, td.mktcol{ min-width:135px; width:135px; }
   th.rmcol, td.rmcol{ min-width:88px; width:88px; }
+  th.chgcol, td.chgcol{ min-width:120px; width:120px; }
 
   td.neg{ color:var(--bad) !important; font-weight:700; }
   tr.ten-row{ background:rgba(212,175,55,.18) !important; }
@@ -215,7 +226,7 @@
   <img src="Logo_ibis_RGB.png" alt="Logo_ibis_RGB">
   <div>
     <h1>Gruppenbericht</h1>
-    <div class="sub">Fix: Opera liefert CLX (nicht CXL) → CLX wird als CXL behandelt • Charts: gefilterte Zeilen + Market-Split • Snapshot teilen</div>
+    <div class="sub">Fix: Opera liefert CLX (nicht CXL) → CLX wird als CXL behandelt • Chg Date ergänzt • Monatsfilter für Chg Date • Statusfilter mit Mehrfachauswahl • Charts: gefilterte Zeilen + Market-Split • Snapshot teilen</div>
   </div>
 </header>
 
@@ -240,14 +251,14 @@
   </div>
 
   <div class="ctrl">
-    <label>Status:</label>
-    <select id="statusSelect">
-      <option value="">Alle</option>
+    <label for="statusSelect">Status:</label>
+    <select id="statusSelect" class="status-multi" multiple title="Mehrere Status gleichzeitig auswählen (Strg/Cmd oder Shift)">
       <option value="ACT">ACT</option>
       <option value="DEF">DEF</option>
       <option value="TEN">TEN</option>
       <option value="CXL">CXL</option>
     </select>
+    <span class="status-hint">Mehrfachauswahl möglich</span>
   </div>
 
   <div class="ctrl">
@@ -265,6 +276,17 @@
   <div class="ctrl">
     <label>Monat (Anreise):</label>
     <select id="monthSelect" title="Filter nach Anreise-Monat">
+      <option value="">Alle</option>
+      <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mär</option>
+      <option value="4">Apr</option><option value="5">Mai</option><option value="6">Jun</option>
+      <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+      <option value="10">Okt</option><option value="11">Nov</option><option value="12">Dez</option>
+    </select>
+  </div>
+
+  <div class="ctrl">
+    <label>Monat (Chg Date):</label>
+    <select id="chgMonthSelect" title="Filter nach Änderungsmonat">
       <option value="">Alle</option>
       <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mär</option>
       <option value="4">Apr</option><option value="5">Mai</option><option value="6">Jun</option>
@@ -295,7 +317,7 @@
   </div>
 
   <div class="note">
-    Hinweis: Opera liefert häufig <b>CLX</b>. Dieses Tool mappt <b>CLX → CXL</b>, damit Filter/Sort/Charts funktionieren.
+    Hinweis: Opera liefert häufig <b>CLX</b>. Dieses Tool mappt <b>CLX → CXL</b>, damit Filter/Sort/Charts funktionieren. Zusätzlich wird <b>CF_CHANGE_DATE</b> als <b>Chg Date</b> importiert.
   </div>
 
   <div style="padding:10px 12px 16px;">
@@ -316,6 +338,7 @@
           <th><input class="col-filter" placeholder="Avg Rate Pick"></th>
           <th><input class="col-filter" placeholder="BB Id"></th>
           <th><input class="col-filter" placeholder="Status"></th>
+          <th class="chgcol"><input class="col-filter" placeholder="Chg Date"></th>
           <th><input class="col-filter" placeholder="Quelle"></th>
           <th><input class="col-filter" placeholder="StatusCode (hidden)"></th>
         </tr>
@@ -335,6 +358,7 @@
           <th>Avg Rate Pick</th>
           <th>BB Id</th>
           <th>Status</th>
+          <th class="chgcol">Chg Date</th>
           <th>Quelle</th>
           <th>StatusCode</th>
         </tr>
@@ -385,7 +409,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <script>
-/* =================== Schweizer Format + CHF + Negative Klammern =================== */
 function toNumber(x){
   if (x === null || x === undefined) return 0;
   const s = String(x).trim().replace(/\s/g,'').replace(/CHF/gi,'').replace(/,/g,'');
@@ -414,10 +437,8 @@ function renderRate(data, type){
   return n;
 }
 
-/* =================== Editable columns =================== */
 const MARKET_OPTIONS = ["", "Corporate", "Leisure"];
 
-/* =================== Auto-Market: Leisure bei bestimmten Account Names =================== */
 const AUTO_LEISURE_ACCOUNTS = [
   "BEY TOURS","EMETRAVEL","EUROPE INCOMING HOLDINGS LTD.","EURORUTAS TUOR OPERATOR S.L.",
   "MEGA TRAVEL OPERADORA S.A DE C.V","MASEUROPA","GLOBETROTTERS TRAVEL AND TOURS",
@@ -486,7 +507,6 @@ function renderMarket(val, type){
   return v || "";
 }
 
-/* =================== Robust Delimited Parser =================== */
 function parseDelimited(text, delimiter){
   const rows=[]; let row=[]; let cur=''; let inQuotes=false;
   for(let i=0;i<text.length;i++){
@@ -506,23 +526,22 @@ function parseDelimited(text, delimiter){
     cur += ch;
   }
   row.push(cur); rows.push(row);
-  return rows.map(r=>r.map(c=>(c??'').trim())).filter(r=>r.some(c=>c!=='')); 
+  return rows.map(r=>r.map(c=>(c??'').trim())).filter(r=>r.some(c=>c!==''));
 }
 function detectDelimiter(line){
-  if(line.includes('\t')) return '\t'; // ✅ TAB
+  if(line.includes('\t')) return '\t';
   const comma=(line.match(/,/g)||[]).length;
   const semi=(line.match(/;/g)||[]).length;
   return semi>comma?';':',';
 }
 
-/* ✅ Header-Normalisierung: BOM/Leerzeichen/Underscore/Quotes egal */
 function normHeaderKey(name){
   return String(name ?? '')
-    .replace(/^\uFEFF/, '')          // BOM
+    .replace(/^\uFEFF/, '')
     .replace(/["']/g,'')
     .trim()
     .toUpperCase()
-    .replace(/[^A-Z0-9]/g,'');       // entfernt _ / Leerzeichen / Sonderzeichen
+    .replace(/[^A-Z0-9]/g,'');
 }
 function buildHeaderMap(headerRow){
   const map={};
@@ -537,8 +556,6 @@ function getCell(cols,map,name){
   if(idx===undefined) return '';
   return cols[idx] ?? '';
 }
-
-/* ✅ Finde Header-Zeile (Opera hat manchmal Report-Zeilen vor dem Header) */
 function findHeaderRowIndex(rows){
   const wantedA = normHeaderKey('ARRIVALDATE');
   const wantedD = normHeaderKey('DEPARTUREDATE');
@@ -569,15 +586,10 @@ function isCurrencyOrVariance(cols,map){
   return hay.includes('currency') || hay.includes('variance') || hay==='chf' || hay.includes(' chf');
 }
 
-
-/* =================== Date helpers =================== */
 function parseOperaDate(d){
   if(d === null || d === undefined) return null;
-  // DataTables can pass strings with NBSP or extra text; normalize and extract first date pattern
   let s = String(d).replace(/\u00A0/g,' ').trim();
   if(!s) return null;
-
-  // extract dd.mm.yy or dd.mm.yyyy (also "/" or "-" separators), optionally followed by time
   let m = s.match(/(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2}|\d{4})/);
   if(m){
     const day = Number(m[1]);
@@ -586,14 +598,11 @@ function parseOperaDate(d){
     if(year < 100) year = 2000 + year;
     return new Date(Date.UTC(year, mon-1, day));
   }
-
-  // extract ISO yyyy-mm-dd (optionally with time)
   m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
   if(m){
     const year = Number(m[1]), mon = Number(m[2]), day = Number(m[3]);
     return new Date(Date.UTC(year, mon-1, day));
   }
-
   return null;
 }
 function parseISODate(s){
@@ -608,21 +617,13 @@ function operaDateKey(d){
   const y = dt.getUTCFullYear();
   const m = dt.getUTCMonth()+1;
   const day = dt.getUTCDate();
-  return (y*10000) + (m*100) + day; // YYYYMMDD
-}
-function operaArrMonth(d){
-  const dt = parseOperaDate(d);
-  return dt ? (dt.getUTCMonth()+1) : null; // 1..12
+  return (y*10000) + (m*100) + day;
 }
 function renderOperaDateSort(data, type){
-  if(type === 'sort' || type === 'type'){
-    return operaDateKey(data);
-  }
+  if(type === 'sort' || type === 'type') return operaDateKey(data);
   return data;
 }
 
-
-/* =================== Status Fix (CLX → CXL) =================== */
 function normStatusRaw(s){
   return String(s ?? "").toUpperCase().replace(/\u00A0/g,' ').trim();
 }
@@ -634,7 +635,6 @@ function statusCodeFromAnyText(s){
   if (letters === "CLX") return "CXL";
   if (letters.includes("CANCEL") || letters.includes("CANCELL")) return "CXL";
   if (letters.includes("CXL")) return "CXL";
-
   if (letters.includes("ACT")) return "ACT";
   if (letters.includes("TEN")) return "TEN";
   if (letters.includes("DEF")) return "DEF";
@@ -648,12 +648,11 @@ function statusBucketFromCode(code){
   return "OTHER";
 }
 
-/* Quickfilter state */
 let washQuickOn = false;
 let marketQuick = "";
-let monthQuick = ""; // Anreise-Monat (1..12)
+let monthQuick = "";
+let chgMonthQuick = "";
 
-/* DataTables global search hook */
 $.fn.dataTable.ext.search.push(function(settings, data){
   if(settings.nTable.id !== 'reportTable') return true;
 
@@ -676,10 +675,16 @@ $.fn.dataTable.ext.search.push(function(settings, data){
     let ok = false;
     for(let y=yStart; y<=yEnd; y++){
       const ms = Date.UTC(y, monthIdx-1, 1);
-      const me = Date.UTC(y, monthIdx, 1); // next month start
-      if(a < me && d >= ms){ ok = true; break; } // overlap
+      const me = Date.UTC(y, monthIdx, 1);
+      if(a < me && d >= ms){ ok = true; break; }
     }
     if(!ok) return false;
+  }
+
+  if (chgMonthQuick){
+    const chg = parseOperaDate(data[14]);
+    if(!chg) return false;
+    if((chg.getUTCMonth()+1) !== Number(chgMonthQuick)) return false;
   }
 
   const arr = parseOperaDate(data[4]);
@@ -709,11 +714,12 @@ $.fn.dataTable.ext.search.push(function(settings, data){
   return true;
 });
 
-/* =================== Storage =================== */
 let dt;
-const STORAGE_KEY="gruppenbericht_data_clx_cxl_fix_v1";
+const STORAGE_KEY="gruppenbericht_data_clx_cxl_fix_chgdate_multistatus_v2";
 const COL_STATUS = 13;
-const COL_STATUSCODE = 15;
+const COL_CHGDATE = 14;
+const COL_SOURCE = 15;
+const COL_STATUSCODE = 16;
 
 function ensureStatusCode(row){
   row[COL_STATUSCODE] = statusCodeFromAnyText(row[COL_STATUS]);
@@ -749,7 +755,6 @@ function loadTableFromLocal(){
   }catch(e){ console.warn(e); }
 }
 
-/* =================== Totals + Debug =================== */
 function computeTotals(rows){
   let curRev=0, pickRev=0, curRm=0, pickRm=0;
   rows.forEach(r=>{
@@ -778,7 +783,6 @@ function updateTotals(){
   document.getElementById('dbg_cxl_filtered').textContent = countCxl(rows);
 }
 
-/* =================== Charts =================== */
 let chRevSplit, chStatusStack, chTrendKw, chTop10BB;
 
 function kwKeyFromOperaDate(operaDDMMYY){
@@ -914,10 +918,8 @@ function upsertCharts(){
   });
 }
 
-/* =================== Excel (mit Charts) =================== */
 function stripHtml(s){ return String(s ?? "").replace(/<[^>]*>/g,'').trim(); }
 
-/* ✅ Export: Werte als echte Zahlen (ohne CHF) */
 function buildAppliedTableForExport(){
   const visibleCols=[];
   dt.columns().every(function(i){ if(this.visible() && i !== COL_STATUSCODE) visibleCols.push(i); });
@@ -925,21 +927,18 @@ function buildAppliedTableForExport(){
   const colNames={
     0:'Business Block',1:'Account',2:'Wash-Potenzial',3:'Market',4:'Anreise',5:'Abreise',
     6:'Rm Cur',7:'Revenue Cur',8:'Avg Cur',9:'Rm Pick',10:'Revenue Pick',11:'Avg Pick',
-    12:'BB Id',13:'Status',14:'Quelle'
+    12:'BB Id',13:'Status',14:'Chg Date',15:'Quelle'
   };
 
   const rows=dt.rows({search:'applied'}).data().toArray();
   const head = visibleCols.map(i=> colNames[i] || `Col ${i}`);
 
-  // Liefert value + isNumber (für HTML/XLS mso-number-format)
   const body = rows.map(r=> visibleCols.map(i=>{
     if(i===2) return { value: washDisplay(r[2]), isNumber:false };
     if(i===3) return { value: marketNormalize(r[3]), isNumber:false };
-
-    if(i===7 || i===10) return { value: toNumber(r[i]), isNumber:true }; // Revenue
-    if(i===8 || i===11) return { value: toNumber(r[i]), isNumber:true }; // Avg Rate
-    if(i===6 || i===9)  return { value: Math.round(toNumber(r[i])), isNumber:true }; // Roomnights
-
+    if(i===7 || i===10) return { value: toNumber(r[i]), isNumber:true };
+    if(i===8 || i===11) return { value: toNumber(r[i]), isNumber:true };
+    if(i===6 || i===9)  return { value: Math.round(toNumber(r[i])), isNumber:true };
     return { value: stripHtml(r[i]), isNumber:false };
   }));
 
@@ -981,21 +980,17 @@ function downloadExcelWithCharts(){
     + "<div class=\"box\"><div class=\"cap\">Top 10 Business Blocks</div>" + (charts.ch_top10_bb ? ("<img src=\"" + charts.ch_top10_bb + "\">") : "<i>Chart fehlt</i>") + "</div>"
     + "</div>";
 
-  // ✅ Tabelle: Zahlen als Zahlen exportieren (ohne CHF)
   const tableHtml = ""
     + "<table><thead><tr>"
     + t.head.map(h=>"<th>"+String(h).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+"</th>").join("")
     + "</tr></thead><tbody>"
     + t.body.map(row=>"<tr>"+row.map(cell=>{
         const v = cell?.value;
-
         if(cell?.isNumber){
           const num = Number(v);
           const safe = Number.isFinite(num) ? String(num) : "0";
-          // 0.00 ist ok für Revenue/Rate; für Roomnights ist es trotzdem Zahl (Excel kann formatieren)
           return "<td style=\"mso-number-format:0.00;\">" + safe + "</td>";
         }
-
         const s = String(v ?? "")
           .replace(/&/g,"&amp;")
           .replace(/</g,"&lt;")
@@ -1012,8 +1007,8 @@ function downloadExcelWithCharts(){
     + " | Zeilen: " + totals.rows
     + " | RmCur: " + Math.round(totals.curRm)
     + " | RmPick: " + Math.round(totals.pickRm)
-    + " | Cur Rev: " + fmt2(totals.curRev)     // ✅ ohne CHF
-    + " | Pick Rev: " + fmt2(totals.pickRev)   // ✅ ohne CHF
+    + " | Cur Rev: " + fmt2(totals.curRev)
+    + " | Pick Rev: " + fmt2(totals.pickRev)
     + "</div>"
     + chartBlock
     + tableHtml
@@ -1029,10 +1024,26 @@ function downloadExcelWithCharts(){
   URL.revokeObjectURL(a.href);
 }
 
-/* =================== DataTable =================== */
 let sortRevCurDesc = true;
 let sortRevPickDesc = true;
 let sortMonthAsc = true;
+
+function getSelectedStatuses(){
+  return Array.from(document.getElementById('statusSelect').selectedOptions || []).map(o => String(o.value || '').trim().toUpperCase()).filter(Boolean);
+}
+function applyStatusFilter(){
+  const selected = getSelectedStatuses();
+  if(!selected.length){
+    dt.column(COL_STATUSCODE).search('', true, false).draw();
+    return;
+  }
+  const regex = '^(' + selected.map(v => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')$';
+  dt.column(COL_STATUSCODE).search(regex, true, false).draw();
+}
+function clearStatusSelection(){
+  const sel = document.getElementById('statusSelect');
+  Array.from(sel.options).forEach(o => o.selected = false);
+}
 
 $(function(){
   dt = $('#reportTable').DataTable({
@@ -1053,14 +1064,11 @@ $(function(){
           },
           format:{
             body:function(data,row,col,node){
-              // ✅ Export ohne CHF + echte Zahlen
               if(col===2) return washToBool($(node).find('input.wash-check').prop('checked')) ? true : false;
               if(col===3) return marketNormalize($(node).find('select.market-select').val()||'');
-
-              if(col===7 || col===10) return toNumber(data);              // Revenue
-              if(col===8 || col===11) return toNumber(data);              // Avg Rate
-              if(col===6 || col===9)  return Math.round(toNumber(data));  // Roomnights
-
+              if(col===7 || col===10) return toNumber(data);
+              if(col===8 || col===11) return toNumber(data);
+              if(col===6 || col===9)  return Math.round(toNumber(data));
               return String(data).replace(/<[^>]*>/g,'').trim();
             }
           }
@@ -1074,8 +1082,9 @@ $(function(){
       { targets:1, className:'accol', width:'440px' },
       { targets:3, className:'mktcol', width:'135px' },
       { targets:[6,9], className:'rmcol', width:'88px' },
+      { targets:14, className:'chgcol', width:'120px' },
 
-      { targets:[4,5], render:renderOperaDateSort },
+      { targets:[4,5,14], render:renderOperaDateSort },
 
       { targets:2, render:renderWash },
       { targets:3, render:renderMarket },
@@ -1096,10 +1105,8 @@ $(function(){
       if(toNumber(data[10])<0) $('td', row).eq(10).addClass('neg');
     }
   });
-  // ✅ expose dt for snapshot/injected loader
   window.dt = dt;
 
-  // Spaltenfilter (Excel-like)
   $('#reportTable thead tr.filter-row th').each(function(i){
     $('input', this).on('keyup change clear', function(){
       const val = this.value || '';
@@ -1112,19 +1119,15 @@ $(function(){
     });
   });
 
-  // Status Dropdown filtert StatusCode exakt
-  $('#statusSelect').on('change', function(){
-    const v=(this.value||'').trim().toUpperCase();
-    if(!v){
-      dt.column(COL_STATUSCODE).search('', true, false).draw();
-      return;
-    }
-    dt.column(COL_STATUSCODE).search('^'+v+'$', true, false).draw();
-  });
+  $('#statusSelect').on('change', applyStatusFilter);
 
-  // Monat Dropdown: zeigt Buchungen, deren Zeitraum den Monat schneidet (Anreise/Abreise)
   $('#monthSelect').on('change', function(){
     monthQuick = (this.value || "").trim();
+    dt.draw();
+  });
+
+  $('#chgMonthSelect').on('change', function(){
+    chgMonthQuick = (this.value || "").trim();
     dt.draw();
   });
 
@@ -1134,7 +1137,6 @@ $(function(){
 
   dt.on('draw', function(){ updateTotals(); upsertCharts(); });
 
-  // preload injection (when opening snapshot)
   try{
     if(Array.isArray(window.__GB_PRELOADED_ROWS__) && window.__GB_PRELOADED_ROWS__.length){
       dt.clear();
@@ -1153,7 +1155,6 @@ $(function(){
   updateTotals();
   upsertCharts();
 
-  // Editable: Wash checkbox
   $('#reportTable tbody').on('change','input.wash-check',function(){
     const tr=$(this).closest('tr');
     const row=dt.row(tr);
@@ -1164,7 +1165,6 @@ $(function(){
     dt.draw(false);
   });
 
-  // Editable: Market dropdown
   $('#reportTable tbody').on('change','select.market-select',function(){
     const tr=$(this).closest('tr');
     const row=dt.row(tr);
@@ -1178,7 +1178,6 @@ $(function(){
   setMarketQuick("");
 });
 
-/* =================== Quickfilter Buttons =================== */
 function setWashQuick(on){
   washQuickOn = !!on;
   document.getElementById('washQuickBtn').classList.toggle('active', washQuickOn);
@@ -1196,7 +1195,6 @@ document.getElementById('mktAllBtn').addEventListener('click', function(){ setMa
 document.getElementById('mktCorpBtn').addEventListener('click', function(){ setMarketQuick("Corporate"); });
 document.getElementById('mktLeisBtn').addEventListener('click', function(){ setMarketQuick("Leisure"); });
 
-/* =================== Schnell-Sortierung Buttons + Reset =================== */
 document.getElementById('sortRevCurBtn').addEventListener('click', function(){
   dt.order([7, sortRevCurDesc ? 'desc' : 'asc']).draw();
   sortRevCurDesc = !sortRevCurDesc;
@@ -1208,16 +1206,12 @@ document.getElementById('sortRevPickBtn').addEventListener('click', function(){
 document.getElementById('sortResetBtn').addEventListener('click', function(){
   dt.order([]).draw();
 });
-
-
 document.getElementById('sortMonthBtn').addEventListener('click', function(){
   dt.order([[4, sortMonthAsc ? 'asc' : 'desc']]).draw();
   this.textContent = 'Sort: Monat (Anreise) ' + (sortMonthAsc ? '↑' : '↓');
   sortMonthAsc = !sortMonthAsc;
 });
 
-
-/* =================== Buttons =================== */
 document.getElementById('chartsResetBtn').addEventListener('click', function(){ if(dt) dt.draw(); });
 
 document.getElementById('clearBtn').addEventListener('click', function(){
@@ -1229,9 +1223,11 @@ document.getElementById('resetBtn').addEventListener('click', function(){
   dt.columns().search('');
   dt.search('');
   document.querySelectorAll('.col-filter').forEach(function(i){ i.value=''; });
-  document.getElementById('statusSelect').value='';
+  clearStatusSelection();
   document.getElementById('monthSelect').value='';
+  document.getElementById('chgMonthSelect').value='';
   monthQuick='';
+  chgMonthQuick='';
   document.getElementById('arrFrom').value='';
   document.getElementById('arrTo').value='';
   document.getElementById('depFrom').value='';
@@ -1244,14 +1240,12 @@ document.getElementById('resetBtn').addEventListener('click', function(){
   dt.order([]).draw();
 });
 
-/* =================== Import =================== */
 function addRowsFromOpera(text, sourceName){
   const firstLine=(text.split(/\r?\n/).find(l=>l.trim().length)||'');
-  const delim=detectDelimiter(firstLine); // ✅ TAB/CSV erkannt
+  const delim=detectDelimiter(firstLine);
   const rows=parseDelimited(text, delim);
   if(!rows.length) return;
 
-  // ✅ Header kann nicht zwingend in Zeile 1 sein (Opera-Report hat manchmal Vorspann)
   const hIdx = findHeaderRowIndex(rows);
   if(hIdx < 0){
     alert('Import-Fehler: Header nicht gefunden. Bitte exportiere als "Delimited Data" (TAB) inkl. Spaltennamen.');
@@ -1261,7 +1255,6 @@ function addRowsFromOpera(text, sourceName){
   const header=rows[hIdx];
   const map=buildHeaderMap(header);
 
-  // ✅ robust: ARRIVALDATE/DEPARTUREDATE wird normalisiert erkannt
   if(map[normHeaderKey('ARRIVALDATE')]===undefined || map[normHeaderKey('DEPARTUREDATE')]===undefined){
     alert('Import-Fehler: Header fehlt. Zeile mit Spaltennamen muss ARRIVALDATE/DEPARTUREDATE enthalten.');
     return;
@@ -1282,9 +1275,9 @@ function addRowsFromOpera(text, sourceName){
     const pickRate=prm>0 ? (pr/prm) : 0;
 
     const statusRaw = normStatusRaw(getCell(cols,map,'BOOKING_STATUS') || getCell(cols,map,'BOOKINGSTATUS') || '');
-    const statusCode = statusCodeFromAnyText(statusRaw); // ✅ CLX → CXL
-
+    const statusCode = statusCodeFromAnyText(statusRaw);
     const accName = getCell(cols,map,'NVL_ACCOUNT_NAME_AGENT_NAME');
+    const changeDate = getCell(cols,map,'CF_CHANGE_DATE') || getCell(cols,map,'CHG_DATE') || '';
 
     dt.row.add([
       getCell(cols,map,'DESCRIPTION'),
@@ -1301,12 +1294,12 @@ function addRowsFromOpera(text, sourceName){
       pickRate,
       getCell(cols,map,'BOOK_ID'),
       statusRaw,
+      changeDate,
       sourceName || '',
       statusCode
     ]);
   }
 }
-
 
 document.getElementById('importFiles').addEventListener('change', async function(e){
   const files=Array.from(e.target.files||[]);
@@ -1324,13 +1317,11 @@ document.getElementById('importFiles').addEventListener('change', async function
   e.target.value='';
 });
 
-/* =================== PDF Export (Logo entfernt; Charts + Tabelle) =================== */
 document.getElementById('pdfBtn').addEventListener('click', async function(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
   const stamp=new Date().toISOString().slice(0,10);
 
-  // Seite 1: Charts
   doc.setFillColor(11,42,74);
   doc.rect(0,0,297,18,'F');
   doc.setFillColor(212,175,55);
@@ -1356,7 +1347,6 @@ document.getElementById('pdfBtn').addEventListener('click', async function(){
     }
   });
 
-  // Seite 2: Tabelle
   doc.addPage();
   doc.setFillColor(11,42,74);
   doc.rect(0,0,297,18,'F');
@@ -1372,7 +1362,7 @@ document.getElementById('pdfBtn').addEventListener('click', async function(){
   const colNames={
     0:'Business Block',1:'Account',2:'Wash-Potenzial',3:'Market',4:'Anreise',5:'Abreise',
     6:'Rm Cur',7:'Revenue Cur',8:'Avg Cur',9:'Rm Pick',10:'Revenue Pick',11:'Avg Pick',
-    12:'BB Id',13:'Status',14:'Quelle'
+    12:'BB Id',13:'Status',14:'Chg Date',15:'Quelle'
   };
 
   const rows=dt.rows({search:'applied'}).data().toArray();
@@ -1412,7 +1402,6 @@ document.getElementById('pdfBtn').addEventListener('click', async function(){
   doc.save("Gruppenbericht_" + stamp + ".pdf");
 });
 
-/* =================== ✅ HTML mit Daten speichern (Snapshot) =================== */
 function __gb_snapshotRows(){
   if(typeof dt==='undefined' || !dt) return [];
   var rows = dt.rows().data().toArray().map(function(r){ return Array.prototype.slice.call(r); });
@@ -1434,8 +1423,6 @@ function downloadHtmlWithData(){
   var payload = __gb_safeJsonForScript(rows);
 
   var html = document.documentElement.outerHTML;
-
-  // WICHTIG: kein echtes </scr"+"ipt> in Strings
   var openScript = "<scr" + "ipt>";
   var closeScript = "<" + "/scr" + "ipt>";
 

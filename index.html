@@ -3,397 +3,620 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Gruppenbericht – FINAL (CLX→CXL Fix + Chg Date + Multi-Status)</title>
+<title>Gruppenbericht – kompakt & klar</title>
 
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
 
 <style>
   :root{
-    --blue:#0b2a4a; --blue2:#123b66; --gold:#d4af37;
-    --ink:#1d1d1f; --muted:#4a4a52; --bad:#c62828;
-    --bg1:#ffe6f2; --bg2:#fff4e6;
+    --cream:#fffaf2;
+    --cream-2:#fff5e8;
+    --cream-3:#fff0dc;
+    --rose:#fff4f7;
+    --sand:#f7ead8;
+    --gold:#c9a24d;
+    --navy:#29415c;
+    --navy-2:#3c5a79;
+    --ink:#2f2c28;
+    --muted:#756d64;
+    --line:#e8dccd;
+    --bad:#b42318;
+    --card:#ffffffd9;
+    --shadow:0 14px 34px rgba(80,63,39,.10);
+    --radius:18px;
   }
+
+  *{ box-sizing:border-box; }
   body{
-    margin:0; padding:18px;
-    font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    margin:0;
+    padding:18px;
+    font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     color:var(--ink);
     background:
-      radial-gradient(1200px 600px at 12% 10%, var(--bg1), transparent 60%),
-      radial-gradient(1100px 600px at 85% 15%, var(--bg2), transparent 55%),
-      linear-gradient(135deg, #fff 0%, #fff6fb 45%, #fff7ef 100%);
+      radial-gradient(900px 500px at 10% 0%, #fff0f6, transparent 55%),
+      radial-gradient(900px 500px at 100% 0%, #fff2df, transparent 60%),
+      linear-gradient(145deg, var(--cream) 0%, #fffdf9 45%, var(--cream-2) 100%);
     min-height:100vh;
   }
-  header{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
-  header img{ height:54px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.10)); }
-  h1{ margin:0; font-size:22px; color:var(--blue); letter-spacing:.2px; }
-  .sub{ margin-top:4px; color:var(--muted); font-size:12px; font-weight:500; letter-spacing:.2px; }
 
-  .bar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0 12px; }
+  .shell{ max-width:1700px; margin:0 auto; }
+
+  .hero,
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    backdrop-filter: blur(8px);
+  }
+
+  .hero{
+    padding:18px 20px;
+    display:flex;
+    gap:16px;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .hero-left{ display:flex; gap:14px; align-items:center; }
+  .hero img{ height:52px; }
+  .hero h1{
+    margin:0;
+    font-size:24px;
+    color:var(--navy);
+    letter-spacing:.2px;
+  }
+  .hero p{
+    margin:4px 0 0;
+    font-size:13px;
+    color:var(--muted);
+    max-width:980px;
+    line-height:1.45;
+  }
+
+  .top-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
 
   .btn{
-    appearance:none; border:0; cursor:pointer;
-    padding:10px 12px; border-radius:12px;
-    background:linear-gradient(135deg,var(--blue),var(--blue2));
-    color:#fff; font-weight:900;
-    box-shadow:0 10px 18px rgba(11,42,74,.25);
+    appearance:none;
+    border:1px solid transparent;
+    cursor:pointer;
+    border-radius:14px;
+    padding:10px 14px;
+    font-weight:800;
+    font-size:13px;
+    transition:.18s ease;
   }
-  .btn.secondary{
-    background:rgba(255,255,255,.82);
-    color:var(--blue);
-    border:1px solid rgba(11,42,74,.25);
-    font-weight:900;
-    box-shadow:0 10px 18px rgba(0,0,0,.08);
+  .btn:hover{ transform:translateY(-1px); }
+  .btn.primary{
+    background:linear-gradient(135deg,var(--navy),var(--navy-2));
+    color:#fff;
+    box-shadow:0 10px 20px rgba(41,65,92,.18);
   }
-  .btn.toggle{
-    background:rgba(255,255,255,.82);
-    color:var(--blue);
-    border:1px solid rgba(11,42,74,.22);
-    box-shadow:0 10px 18px rgba(0,0,0,.08);
+  .btn.soft{
+    background:linear-gradient(180deg,#fff,#fff8ee);
+    color:var(--navy);
+    border-color:var(--line);
   }
   .btn.toggle.active{
-    background:linear-gradient(135deg,var(--blue),var(--blue2));
-    color:var(--gold);
-    border:1px solid rgba(212,175,55,.55);
+    background:linear-gradient(135deg,var(--navy),var(--navy-2));
+    color:#fff;
+    border-color:rgba(201,162,77,.55);
   }
 
-  .file, .ctrl{
-    display:flex; gap:8px; align-items:center;
-    padding:10px 12px; border-radius:12px;
-    background:rgba(255,255,255,.82);
-    border:1px solid rgba(11,42,74,.18);
-    box-shadow:0 10px 18px rgba(0,0,0,.08);
+  .toolbar{
+    padding:14px;
+    margin-bottom:14px;
+    display:grid;
+    grid-template-columns: 1.2fr 1.5fr 1fr;
+    gap:12px;
   }
-  .file label, .ctrl label{ font-size:13px; color:var(--blue); font-weight:900; white-space:nowrap; }
-  .ctrl input, .ctrl select{
-    padding:8px 10px; border-radius:10px;
-    border:1px solid rgba(11,42,74,.22);
-    background:rgba(255,255,255,.98);
-    font-size:12px; outline:none; color:var(--ink);
+  .panel{
+    background:linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,249,240,.92));
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px;
   }
-  .ctrl .tiny{ width: 140px; }
-  .ctrl .check{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--blue); font-weight:800; }
-  .status-multi{
-    min-width: 140px;
-    min-height: 110px;
-    font-weight: 700;
+  .panel-title{
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.04em;
+    color:var(--navy);
+    text-transform:uppercase;
+    margin:0 0 10px;
   }
-  .status-hint{
-    font-size:11px;
-    color:var(--muted);
-    margin-left:4px;
+  .stack, .row-wrap{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
   }
-
-  .card{
-    background:rgba(255,255,255,.86);
-    backdrop-filter: blur(8px);
-    border:1px solid rgba(11,42,74,.18);
-    border-radius:18px;
-    box-shadow:0 14px 30px rgba(0,0,0,.12);
-    overflow:hidden;
+  .field{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+    padding:10px 12px;
+    border-radius:14px;
+    background:#fffdf9;
+    border:1px solid var(--line);
   }
+  .field label{
+    font-size:12px;
+    color:var(--navy);
+    font-weight:800;
+    white-space:nowrap;
+  }
+  .field input,
+  .field select{
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid #e2d5c3;
+    background:#fff;
+    color:var(--ink);
+    font-size:12px;
+    outline:none;
+  }
+  .field .tiny{ width:138px; }
+  .status-multi{ min-width:145px; min-height:96px; }
+  .status-hint{ font-size:11px; color:var(--muted); }
 
   .summary{
-    display:flex; gap:10px; flex-wrap:wrap;
-    padding:14px 16px;
-    border-bottom:2px solid rgba(212,175,55,.35);
-    align-items:center;
-    justify-content:flex-start;
-    background:linear-gradient(90deg, rgba(11,42,74,.08), rgba(212,175,55,.10));
+    display:grid;
+    grid-template-columns: repeat(6, minmax(140px, 1fr));
+    gap:10px;
+    padding:14px;
+    margin-bottom:14px;
   }
-  .pill{
-    display:flex; gap:10px; align-items:baseline;
-    padding:10px 12px;
-    border-radius:999px;
-    background:rgba(255,255,255,.94);
-    border:1px solid rgba(11,42,74,.18);
+  .metric{
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px 14px;
+    background:linear-gradient(180deg,#fff,#fff8ef);
+  }
+  .metric b{
+    display:block;
+    font-size:12px;
+    color:var(--navy);
+    margin-bottom:6px;
+  }
+  .metric span{
+    font-size:22px;
     font-weight:900;
+    letter-spacing:.01em;
   }
-  .pill b{ color:var(--blue); font-size:13px; }
-  .pill span{ font-size:12px; color:var(--ink); }
+  .metric small{ color:var(--muted); font-weight:700; font-size:11px; }
 
-  .note{ padding:10px 16px 0; color:var(--muted); font-size:12px; }
+  .table-card{ padding:0; overflow:hidden; }
+  .section-head{
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg, rgba(255,245,232,.95), rgba(255,250,244,.95));
+  }
+  .section-head h2{
+    margin:0;
+    font-size:16px;
+    color:var(--navy);
+  }
+  .section-head p{
+    margin:3px 0 0;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .table-wrap{ padding:10px 12px 16px; }
 
   table.dataTable{ width:100% !important; border-collapse:separate !important; border-spacing:0; }
   table.dataTable thead th{
-    background:rgba(11,42,74,.10);
-    border-bottom:2px solid rgba(11,42,74,.35) !important;
-    color:var(--blue);
+    background:#f8efe2;
+    border-bottom:2px solid #ddc9a8 !important;
+    color:var(--navy);
     text-align:center !important;
-    font-weight:950;
+    font-weight:900;
+    padding:6px 6px !important;
+    font-size:11px;
+    line-height:1.2;
   }
-  table.dataTable tbody td{
-    border-bottom:1px solid rgba(43,43,47,.30) !important;
-    text-align:center !important;
-    vertical-align:middle;
-    font-weight:400;
-    color:var(--ink);
-    white-space:nowrap;
-  }
-  table.dataTable tbody tr:hover{ background:rgba(255,231,243,.35); }
-
   thead .filter-row th{
+    background:#fffdf9;
+    border-bottom:1px solid var(--line) !important;
     padding:8px 10px;
-    background:rgba(255,255,255,.82);
-    border-bottom:1px solid rgba(11,42,74,.20) !important;
   }
   .col-filter{
     width:100%;
-    padding:8px 10px;
-    border-radius:10px;
-    border:1px solid rgba(11,42,74,.22);
-    background:rgba(255,255,255,.98);
-    outline:none;
-    font-size:12px;
-    color:var(--ink);
+    padding:5px 6px;
+    border-radius:8px;
+    border:1px solid #e3d7c8;
+    background:#fff;
+    font-size:11px;
     text-align:center;
+    color:var(--ink);
     font-weight:600;
   }
+  table.dataTable tbody td{
+    border-bottom:1px solid #f0e7dc !important;
+    text-align:center !important;
+    vertical-align:middle;
+    white-space:nowrap;
+    padding:6px 6px !important;
+    font-size:11px;
+    line-height:1.2;
+  }
+  table.dataTable tbody tr:hover{ background:#fff7ec; }
 
-  th.bbcol, td.bbcol{ max-width:360px; overflow:hidden; text-overflow:ellipsis; }
-  th.accol, td.accol{ max-width:440px; overflow:hidden; text-overflow:ellipsis; }
-  th.mktcol, td.mktcol{ min-width:135px; width:135px; }
-  th.rmcol, td.rmcol{ min-width:88px; width:88px; }
-  th.chgcol, td.chgcol{ min-width:120px; width:120px; }
+  th.bbcol, td.bbcol{ max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  th.accol, td.accol{ max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  th.mktcol, td.mktcol{ min-width:90px; width:90px; }
+  th.rmcol, td.rmcol{ min-width:65px; width:65px; }
+  th.chgcol, td.chgcol{ min-width:95px; width:95px; }
 
-  td.neg{ color:var(--bad) !important; font-weight:700; }
-  tr.ten-row{ background:rgba(212,175,55,.18) !important; }
-  tr.ten-row:hover{ background:rgba(212,175,55,.28) !important; }
+  td.neg{ color:var(--bad) !important; font-weight:800; }
+  tr.ten-row{ background:#fff6db !important; }
+  tr.ten-row:hover{ background:#fff1c5 !important; }
 
   .dt-buttons .dt-button{
-    background:var(--blue) !important;
-    color:var(--gold) !important;
-    border:1px solid rgba(212,175,55,.55) !important;
+    background:linear-gradient(180deg,#fff,#fff7ed) !important;
+    color:var(--navy) !important;
+    border:1px solid var(--line) !important;
     border-radius:12px !important;
-    font-weight:950 !important;
-    box-shadow:0 10px 18px rgba(11,42,74,.18);
+    font-weight:900 !important;
   }
-
   div.dt-button-collection{
-    background:var(--blue) !important;
-    border:1px solid rgba(212,175,55,.65) !important;
-    box-shadow:0 14px 30px rgba(0,0,0,.28) !important;
-    padding:8px !important;
-    border-radius:12px !important;
+    background:#e1c39a !important;
+    border:2px solid #6f4e28 !important;
+    box-shadow:0 18px 34px rgba(58,44,30,.32) !important;
+    border-radius:14px !important;
+    padding:10px !important;
     z-index:999999 !important;
   }
-  div.dt-button-collection a.dt-button{
+  div.dt-button-collection .dt-button,
+  div.dt-button-collection a.dt-button,
+  div.dt-button-collection button.dt-button{
     display:block !important;
     width:260px !important;
     text-align:left !important;
     padding:10px 12px !important;
-    margin:4px 0 !important;
     border-radius:10px !important;
-    background:rgba(255,255,255,.06) !important;
-    color:var(--gold) !important;
-    border:1px solid rgba(212,175,55,.22) !important;
+    background:#fffaf4 !important;
+    color:#1a1a1a !important;
+    border:2px solid #8b642f !important;
+    margin:4px 0 !important;
     font-weight:900 !important;
+    text-shadow:none !important;
+    box-shadow:none !important;
+    opacity:1 !important;
   }
-  div.dt-button-collection a.dt-button:hover{ background:rgba(212,175,55,.14) !important; }
-  div.dt-button-collection a.dt-button.active{
-    background:rgba(212,175,55,.18) !important;
-    border:1px solid rgba(212,175,55,.70) !important;
+  div.dt-button-collection .dt-button span,
+  div.dt-button-collection a.dt-button span,
+  div.dt-button-collection button.dt-button span{
+    color:#1a1a1a !important;
   }
-  div.dt-button-collection a.dt-button.active::before{ content:"✓ "; }
-  div.dt-button-collection a.dt-button:not(.active)::before{ content:"◻ "; color:rgba(212,175,55,.75); }
+  div.dt-button-collection .dt-button:hover,
+  div.dt-button-collection a.dt-button:hover,
+  div.dt-button-collection button.dt-button:hover{
+    background:#f3e0bf !important;
+    color:#111 !important;
+    border-color:#6f4e28 !important;
+  }
+  div.dt-button-collection .dt-button.active,
+  div.dt-button-collection a.dt-button.active,
+  div.dt-button-collection button.dt-button.active{
+    background:#cfab75 !important;
+    color:#111 !important;
+    border-color:#5a3f20 !important;
+  }
+  div.dt-button-collection .dt-button.active::before,
+  div.dt-button-collection a.dt-button.active::before,
+  div.dt-button-collection button.dt-button.active::before{ content:"✓ "; color:#4c3519; font-weight:900; }
+  div.dt-button-collection .dt-button:not(.active)::before,
+  div.dt-button-collection a.dt-button:not(.active)::before,
+  div.dt-button-collection button.dt-button:not(.active)::before{ content:"◻ "; color:#6f4e28; }
+  div.dt-button-background{ background:rgba(40,28,16,.35) !important; }
+  .dt-button-collection .buttons-columnVisibility,
+  .dt-button-collection a.buttons-columnVisibility,
+  .dt-button-collection button.buttons-columnVisibility{
+    background:#ffffff !important;
+    color:#111111 !important;
+    border:2px solid #5b3d1c !important;
+  }
+  .dt-button-collection .buttons-columnVisibility span,
+  .dt-button-collection a.buttons-columnVisibility span,
+  .dt-button-collection button.buttons-columnVisibility span,
+  .dt-button-collection .dt-button-text{
+    color:#111111 !important;
+    opacity:1 !important;
+    visibility:visible !important;
+  }
 
+  td.mktcol{ position:relative; overflow:visible !important; }
   .cell-select{
     width:100%;
-    padding:6px 8px;
+    min-width:108px;
+    padding:7px 10px;
     border-radius:10px;
-    border:1px solid rgba(11,42,74,.25);
-    background:rgba(255,255,255,.98);
-    font-weight:600;
-    color:var(--ink);
+    border:2px solid #8b642f;
+    background:#fffaf4;
+    font-weight:800;
+    color:#1a1a1a;
+    appearance:auto;
+    -webkit-appearance:menulist;
+    pointer-events:auto;
+    cursor:pointer;
+    appearance:auto;
+    -webkit-appearance:menulist;
+    position:relative;
+    z-index:2;
   }
-  .cell-check{
-    transform:scale(1.2);
-    accent-color:var(--blue);
+  .cell-select:hover{ border-color:#7a5629; background:#fff7ee; }
+  .cell-select:focus{
+    outline:none;
+    border-color:#6d4c24;
+    box-shadow:0 0 0 3px rgba(201,162,77,.18);
+  }
+  .cell-select option{
+    background:#fffaf4;
+    color:#2f2c28;
+  }
+  .cell-check{ transform:scale(1.15); accent-color:var(--navy); cursor:pointer; }
+
+  .column-popover{
+    position:fixed;
+    top:88px;
+    right:24px;
+    width:260px;
+    max-width:calc(100vw - 32px);
+    max-height:70vh;
+    overflow:auto;
+    background:#ffffff;
+    border:2px solid #7a5730;
+    border-radius:16px;
+    box-shadow:0 22px 46px rgba(58,44,30,.28);
+    padding:14px;
+    z-index:1000000;
+    display:none;
+  }
+  .column-popover.open{ display:block; }
+  .column-popover h3{
+    margin:0 0 10px 0;
+    color:#2c2117;
+    font-size:16px;
+  }
+  .column-grid{ display:grid; gap:8px; }
+  .col-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    border:1px solid #d8c3a9;
+    border-radius:10px;
+    background:#fffaf4;
+    color:#1c1c1c;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .col-item input{ transform:scale(1.15); accent-color:#5b3d1c; }
+  .col-item:hover{ background:#f5e6d3; border-color:#9d7140; }
+  .column-actions{ display:flex; gap:8px; margin-top:12px; }
+  .column-actions .mini{
+    flex:1;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid #8f6b42;
+    background:#fff;
+    color:#2b2119;
+    font-weight:800;
     cursor:pointer;
   }
 
+
+  @media (max-width: 1280px){
+    .toolbar{ grid-template-columns:1fr; }
+    .summary{ grid-template-columns: repeat(3, minmax(140px, 1fr)); }
+  }
+  @media (max-width: 720px){
+    .summary{ grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+    .hero-left{ align-items:flex-start; }
+  }
+
   @media print{
-    header, .bar, .dt-buttons, .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate { display:none !important; }
+    .hero, .toolbar, .dt-buttons, .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate { display:none !important; }
     .card{ box-shadow:none; border:0; }
     table{ font-size:10px !important; }
     @page { size:A4 landscape; margin:10mm; }
   }
 </style>
 </head>
-
 <body>
-<header>
-  <img src="Logo_ibis_RGB.png" alt="Logo_ibis_RGB">
-  <div>
-    <h1>Gruppenbericht</h1>
-    <div class="sub">Fix: Opera liefert CLX (nicht CXL) → CLX wird als CXL behandelt • Chg Date ergänzt • Monatsfilter für Chg Date • Statusfilter mit Mehrfachauswahl • Charts: gefilterte Zeilen + Market-Split • Snapshot teilen</div>
-  </div>
-</header>
+<div class="shell">
 
-<div class="bar">
-  <button class="btn secondary" id="resetBtn" type="button">Filter zurücksetzen</button>
-  <button class="btn secondary" id="clearBtn" type="button">Tabelle leeren</button>
-  <button class="btn" id="pdfBtn" type="button">PDF herunterladen</button>
-  <button class="btn" id="saveHtmlBtn" type="button">HTML mit Daten speichern</button>
-
-  <button class="btn secondary" id="sortRevCurBtn" type="button">Sort: Revenue Cur ↓</button>
-  <button class="btn secondary" id="sortRevPickBtn" type="button">Sort: Revenue Pick ↓</button>
-  <button class="btn secondary" id="sortResetBtn" type="button">Sort Reset</button>
-
-  <button class="btn toggle" id="washQuickBtn" type="button">Nur Wash = true</button>
-  <button class="btn toggle" id="mktAllBtn" type="button">Market: Alle</button>
-  <button class="btn toggle" id="mktCorpBtn" type="button">Market: Corporate</button>
-  <button class="btn toggle" id="mktLeisBtn" type="button">Market: Leisure</button>
-
-  <div class="file">
-    <label for="importFiles"><b>Import</b> (mehrere möglich):</label>
-    <input id="importFiles" type="file" accept=".txt,.csv" multiple>
-  </div>
-
-  <div class="ctrl">
-    <label for="statusSelect">Status:</label>
-    <select id="statusSelect" class="status-multi" multiple title="Mehrere Status gleichzeitig auswählen (Strg/Cmd oder Shift)">
-      <option value="ACT">ACT</option>
-      <option value="DEF">DEF</option>
-      <option value="TEN">TEN</option>
-      <option value="CXL">CXL</option>
-    </select>
-    <span class="status-hint">Mehrfachauswahl möglich</span>
-  </div>
-
-  <div class="ctrl">
-    <label>Anreise:</label>
-    <input class="tiny" id="arrFrom" type="date">
-    <input class="tiny" id="arrTo" type="date">
-  </div>
-
-  <div class="ctrl">
-    <label>Abreise:</label>
-    <input class="tiny" id="depFrom" type="date">
-    <input class="tiny" id="depTo" type="date">
-  </div>
-
-  <div class="ctrl">
-    <label>Monat (Anreise):</label>
-    <select id="monthSelect" title="Filter nach Anreise-Monat">
-      <option value="">Alle</option>
-      <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mär</option>
-      <option value="4">Apr</option><option value="5">Mai</option><option value="6">Jun</option>
-      <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
-      <option value="10">Okt</option><option value="11">Nov</option><option value="12">Dez</option>
-    </select>
-  </div>
-
-  <div class="ctrl">
-    <label>Monat (Chg Date):</label>
-    <select id="chgMonthSelect" title="Filter nach Änderungsmonat">
-      <option value="">Alle</option>
-      <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mär</option>
-      <option value="4">Apr</option><option value="5">Mai</option><option value="6">Jun</option>
-      <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
-      <option value="10">Okt</option><option value="11">Nov</option><option value="12">Dez</option>
-    </select>
-  </div>
-
-  <button class="btn secondary" id="sortMonthBtn" type="button" title="Sortierung nach Anreise-Monat (und Datum)">Sort: Monat (Anreise) ↑</button>
-
-  <div class="ctrl">
-    <div class="check">
-      <input id="negOnly" type="checkbox">
-      <label for="negOnly">Nur negative Zeilen (Rev Cur/Pick &lt; 0)</label>
-    </div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="summary">
-    <div class="pill"><b>Zeilen:</b> <span id="f_rows">0</span></div>
-    <div class="pill"><b>Rm Cur:</b> <span id="f_rmcur">0</span></div>
-    <div class="pill"><b>Rm Pick:</b> <span id="f_rmpick">0</span></div>
-    <div class="pill"><b>Revenue Cur:</b> <span id="f_rev">0.00 CHF</span></div>
-    <div class="pill"><b>Revenue Pick:</b> <span id="f_prev">0.00 CHF</span></div>
-    <div class="pill"><b>CXL total:</b> <span id="dbg_cxl_total">0</span></div>
-    <div class="pill"><b>CXL gefiltert:</b> <span id="dbg_cxl_filtered">0</span></div>
-  </div>
-
-  <div class="note">
-    Hinweis: Opera liefert häufig <b>CLX</b>. Dieses Tool mappt <b>CLX → CXL</b>, damit Filter/Sort/Charts funktionieren. Zusätzlich wird <b>CF_CHANGE_DATE</b> als <b>Chg Date</b> importiert.
-  </div>
-
-  <div style="padding:10px 12px 16px;">
-    <table id="reportTable" class="display" style="width:100%">
-      <thead>
-        <tr class="filter-row">
-          <th class="bbcol"><input class="col-filter" placeholder="Business Block"></th>
-          <th class="accol"><input class="col-filter" placeholder="Account Name"></th>
-          <th><input class="col-filter" placeholder="Wash (true/false)"></th>
-          <th class="mktcol"><input class="col-filter" placeholder="Market"></th>
-          <th><input class="col-filter" placeholder="Anreise"></th>
-          <th><input class="col-filter" placeholder="Abreise"></th>
-          <th class="rmcol"><input class="col-filter" placeholder="Rm Cur"></th>
-          <th><input class="col-filter" placeholder="Revenue Cur"></th>
-          <th><input class="col-filter" placeholder="Avg Rate Cur"></th>
-          <th class="rmcol"><input class="col-filter" placeholder="Rm Pick"></th>
-          <th><input class="col-filter" placeholder="Revenue Pick"></th>
-          <th><input class="col-filter" placeholder="Avg Rate Pick"></th>
-          <th><input class="col-filter" placeholder="BB Id"></th>
-          <th><input class="col-filter" placeholder="Status"></th>
-          <th class="chgcol"><input class="col-filter" placeholder="Chg Date"></th>
-          <th><input class="col-filter" placeholder="Quelle"></th>
-          <th><input class="col-filter" placeholder="StatusCode (hidden)"></th>
-        </tr>
-
-        <tr>
-          <th class="bbcol">Business Block Name</th>
-          <th class="accol">Account Name</th>
-          <th>Wash-Potenzial</th>
-          <th class="mktcol">Market</th>
-          <th>Anreise</th>
-          <th>Abreise</th>
-          <th class="rmcol">Rm Cur</th>
-          <th>Revenue Cur</th>
-          <th>Avg Rate Cur</th>
-          <th class="rmcol">Rm Pick</th>
-          <th>Revenue Pick</th>
-          <th>Avg Rate Pick</th>
-          <th>BB Id</th>
-          <th>Status</th>
-          <th class="chgcol">Chg Date</th>
-          <th>Quelle</th>
-          <th>StatusCode</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</div>
-
-<div class="card" style="margin-top:14px;">
-  <div class="summary" style="justify-content:space-between;">
-    <div class="pill"><b>Charts:</b> <span>Gefilterte Zeilen • Market-Split</span></div>
-    <button class="btn secondary" id="chartsResetBtn" type="button">Charts Reset</button>
-  </div>
-
-  <div style="padding:14px 16px;">
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:14px;">
-      <div class="card" style="padding:12px;">
-        <div style="font-weight:900; color:var(--blue); margin-bottom:8px;">Revenue Cur vs Pick (Market-Split)</div>
-        <canvas id="ch_rev_split" height="170"></canvas>
-      </div>
-      <div class="card" style="padding:12px;">
-        <div style="font-weight:900; color:var(--blue); margin-bottom:8px;">Revenue Cur nach Status (Market-Split)</div>
-        <canvas id="ch_status_stack" height="170"></canvas>
-      </div>
-      <div class="card" style="padding:12px;">
-        <div style="font-weight:900; color:var(--blue); margin-bottom:8px;">Trend nach Anreise (KW) – Revenue Cur (Market-Split)</div>
-        <canvas id="ch_trend_kw" height="170"></canvas>
-      </div>
-      <div class="card" style="padding:12px;">
-        <div style="font-weight:900; color:var(--blue); margin-bottom:8px;">Top 10 Business Blocks – Revenue Cur (Market-Split)</div>
-        <canvas id="ch_top10_bb" height="220"></canvas>
+  <section class="hero">
+    <div class="hero-left">
+      <img src="Logo_ibis_RGB.png" alt="Logo_ibis_RGB" onerror="this.style.display='none'">
+      <div>
+        <h1>Gruppenbericht</h1>
+        <p>Reduziert, heller und klarer aufgebaut. CLX wird automatisch als CXL behandelt, Chg Date bleibt erhalten, Mehrfach-Statusfilter ist aktiv und die Excel-Variante enthält nur noch die Daten ohne Charts. Auch der Chart-Bereich in der HTML-Version wurde entfernt. Die Tabelle ist zusätzlich kompakter für mehr Platz pro Bericht.</p>
       </div>
     </div>
+
+    <div class="top-actions">
+      <button class="btn primary" id="pdfBtn" type="button">PDF herunterladen</button>
+      <button class="btn secondary" id="importJsonBtn" type="button">JSON import</button>
+      <button class="btn primary" id="exportJsonBtn" type="button">JSON export</button>
+      <input id="importJsonFile" type="file" accept=".json" style="display:none">
+      <button class="btn soft" id="resetBtn" type="button">Filter zurücksetzen</button>
+      <button class="btn soft" id="clearBtn" type="button">Tabelle leeren</button>
+      <button class="btn soft" id="colToggleBtn" type="button">Spalten auswählen</button>
+      <button class="btn soft" id="compactToggleBtn" type="button">Ansicht: Kompakt</button>
+    </div>
+  </section>
+
+  <section class="card toolbar">
+    <div class="panel">
+      <div class="panel-title">Import & Schnellfilter</div>
+      <div class="stack">
+        <div class="field">
+          <label for="importFiles">Dateien importieren</label>
+          <input id="importFiles" type="file" accept=".txt,.csv" multiple>
+        </div>
+        <button class="btn soft toggle" id="washQuickBtn" type="button">Nur Wash = true</button>
+      </div>
+      <div class="row-wrap" style="margin-top:10px;">
+        <button class="btn soft toggle" id="mktAllBtn" type="button">Alle Märkte</button>
+        <button class="btn soft toggle" id="mktCorpBtn" type="button">Corporate</button>
+        <button class="btn soft toggle" id="mktLeisBtn" type="button">Leisure</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Filter</div>
+      <div class="row-wrap">
+        <div class="field">
+          <label for="statusSelect">Status</label>
+          <select id="statusSelect" title="Status auswählen">
+            <option value="">Alle</option>
+            <option value="ACT">ACT</option>
+            <option value="DEF">DEF</option>
+            <option value="TEN">TEN</option>
+            <option value="CXL">CXL</option>
+          </select>
+          <span class="status-hint">Dropdown-Auswahl</span>
+        </div>
+
+        <div class="field">
+          <label>Anreise</label>
+          <input class="tiny" id="arrFrom" type="date">
+          <input class="tiny" id="arrTo" type="date">
+        </div>
+
+        <div class="field">
+          <label>Abreise</label>
+          <input class="tiny" id="depFrom" type="date">
+          <input class="tiny" id="depTo" type="date">
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Monat & Ansicht</div>
+      <div class="stack">
+        <div class="field">
+          <label for="monthSelect">Monat Anreise</label>
+          <select id="monthSelect">
+            <option value="">Alle</option>
+            <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mär</option>
+            <option value="4">Apr</option><option value="5">Mai</option><option value="6">Jun</option>
+            <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+            <option value="10">Okt</option><option value="11">Nov</option><option value="12">Dez</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="chgMonthSelect">Monat Chg Date</label>
+          <select id="chgMonthSelect">
+            <option value="">Alle</option>
+            <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mär</option>
+            <option value="4">Apr</option><option value="5">Mai</option><option value="6">Jun</option>
+            <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+            <option value="10">Okt</option><option value="11">Nov</option><option value="12">Dez</option>
+          </select>
+        </div>
+      </div>
+      <div class="row-wrap" style="margin-top:10px;">
+        <button class="btn soft" id="sortRevCurBtn" type="button">Revenue Cur</button>
+        <button class="btn soft" id="sortRevPickBtn" type="button">Revenue Pick</button>
+        <button class="btn soft" id="sortMonthBtn" type="button">Monat Anreise ↑</button>
+        <button class="btn soft" id="sortResetBtn" type="button">Sort Reset</button>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <input id="negOnly" type="checkbox">
+        <label for="negOnly">Nur negative Zeilen</label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card summary">
+    <div class="metric"><b>Zeilen</b><span id="f_rows">0</span></div>
+    <div class="metric"><b>Rm Cur</b><span id="f_rmcur">0</span></div>
+    <div class="metric"><b>Rm Pick</b><span id="f_rmpick">0</span></div>
+    <div class="metric"><b>Revenue Cur</b><span id="f_rev">0.00 CHF</span></div>
+    <div class="metric"><b>Revenue Pick</b><span id="f_prev">0.00 CHF</span></div>
+    <div class="metric"><b>CXL</b><span id="dbg_cxl_filtered">0</span><small id="dbg_cxl_total_wrap">von 0 gesamt</small></div>
+  </section>
+
+  <section class="card table-card">
+    <div class="section-head">
+      <div>
+        <h2>Tabelle</h2>
+        <p>Helleres Layout, weniger verstreute Aktionen und klarere Gruppierung.</p>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="reportTable" class="display" style="width:100%">
+        <thead>
+          <tr class="filter-row">
+            <th class="bbcol"><input class="col-filter" placeholder="Business Block"></th>
+            <th class="accol"><input class="col-filter" placeholder="Account Name"></th>
+            <th><input class="col-filter" placeholder="Selection"></th>
+            <th class="mktcol"><input class="col-filter" placeholder="Market"></th>
+            <th><input class="col-filter" placeholder="Anreise"></th>
+            <th><input class="col-filter" placeholder="Abreise"></th>
+            <th class="rmcol"><input class="col-filter" placeholder="Rm Cur"></th>
+            <th><input class="col-filter" placeholder="Revenue Cur"></th>
+            <th><input class="col-filter" placeholder="Avg Rate Cur"></th>
+            <th class="rmcol"><input class="col-filter" placeholder="Rm Pick"></th>
+            <th><input class="col-filter" placeholder="Revenue Pick"></th>
+            <th><input class="col-filter" placeholder="Avg Rate Pick"></th>
+            <th><input class="col-filter" placeholder="BB Id"></th>
+            <th><input class="col-filter" placeholder="Status"></th>
+            <th class="chgcol"><input class="col-filter" placeholder="Chg Date"></th>
+            <th><input class="col-filter" placeholder="Quelle"></th>
+            <th><input class="col-filter" placeholder="StatusCode (hidden)"></th>
+          </tr>
+          <tr>
+            <th class="bbcol">Business Block Name</th>
+            <th class="accol">Account Name</th>
+            <th>Selection</th>
+            <th class="mktcol">Market</th>
+            <th>Anreise</th>
+            <th>Abreise</th>
+            <th class="rmcol">Rm Cur</th>
+            <th>Revenue Cur</th>
+            <th>Avg Rate Cur</th>
+            <th class="rmcol">Rm Pick</th>
+            <th>Revenue Pick</th>
+            <th>Avg Rate Pick</th>
+            <th>BB Id</th>
+            <th>Status</th>
+            <th class="chgcol">Chg Date</th>
+            <th>Quelle</th>
+            <th>StatusCode</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div id="columnPopover" class="column-popover" aria-hidden="true">
+    <h3>Spalten auswählen</h3>
+    <div id="columnChooser" class="column-grid"></div>
+    <div class="column-actions">
+      <button class="mini" id="showAllColsBtn" type="button">Alle anzeigen</button>
+      <button class="mini" id="hideOptionalColsBtn" type="button">Kompakt</button>
+    </div>
   </div>
+
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -402,11 +625,8 @@
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.colVis.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <script>
 function toNumber(x){
@@ -416,29 +636,31 @@ function toNumber(x){
   return Number.isFinite(n) ? n : 0;
 }
 function fmt2(n){ return Number(n).toLocaleString("de-CH",{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function fmtMoney(n){
-  const val = Number(n);
-  if (val < 0) return "(" + fmt2(Math.abs(val)) + ")";
-  return fmt2(val);
+function fmtMoney(n){ const val = Number(n); return val < 0 ? "(" + fmt2(Math.abs(val)) + ")" : fmt2(val); }
+function renderInt(data, type){ const n = Math.round(toNumber(data)); return type === 'display' ? String(n) : n; }
+function renderCHF(data, type){ const n = toNumber(data); return type === 'display' ? fmtMoney(n) + " CHF" : n; }
+function renderRate(data, type){ const n = toNumber(data); return type === 'display' ? fmtMoney(n) : n; }
+
+
+const VIEW_KEY='gruppenbericht_view_compact_v1';
+function setCompactMode(on){
+  document.body.classList.toggle('compact-mode', !!on);
+  const btn = document.getElementById('compactToggleBtn');
+  if(btn){ btn.textContent = 'Ansicht: ' + (on ? 'Normal' : 'Kompakt'); }
+  try{ localStorage.setItem(VIEW_KEY, on ? '1' : '0'); }catch(e){}
+  if(window.dt){ dt.columns.adjust().draw(false); }
 }
-function renderInt(data, type){
-  const n = Math.round(toNumber(data));
-  if (type === 'display') return String(n);
-  return n;
-}
-function renderCHF(data, type){
-  const n = toNumber(data);
-  if (type === 'display') return fmtMoney(n) + " CHF";
-  return n;
-}
-function renderRate(data, type){
-  const n = toNumber(data);
-  if (type === 'display') return fmtMoney(n);
-  return n;
+function initCompactMode(){
+  let on = false;
+  try{
+    const saved = localStorage.getItem(VIEW_KEY);
+    if(saved !== null) on = saved === '1';
+    else on = window.innerWidth < 1650;
+  }catch(e){ on = window.innerWidth < 1650; }
+  setCompactMode(on);
 }
 
 const MARKET_OPTIONS = ["", "Corporate", "Leisure"];
-
 const AUTO_LEISURE_ACCOUNTS = [
   "BEY TOURS","EMETRAVEL","EUROPE INCOMING HOLDINGS LTD.","EURORUTAS TUOR OPERATOR S.L.",
   "MEGA TRAVEL OPERADORA S.A DE C.V","MASEUROPA","GLOBETROTTERS TRAVEL AND TOURS",
@@ -446,590 +668,116 @@ const AUTO_LEISURE_ACCOUNTS = [
   "EUROPA MUNDO VACACIONES, S.L.U.","G2 TRAVEL LTD.","KUONI GLOBAL TRAVEL SERVICES (SCHWEIZ)",
   "EUROPE INCOMING LONDON","VOSAIO TRAVEL LIMITED","MAPA TOURS"
 ];
-function normAccount(s){
-  return String(s ?? "")
-    .toUpperCase()
-    .replace(/[’']/g, "'")
-    .replace(/[“”"]/g, '"')
-    .replace(/\u00A0/g, ' ')
-    .replace(/\s+/g, " ")
-    .trim();
-}
-function shouldAutoLeisure(accountName){
-  const n = normAccount(accountName);
-  if (!n) return false;
-  return AUTO_LEISURE_ACCOUNTS.some(a => {
-    const aa = normAccount(a);
-    return n.includes(aa) || n.startsWith(aa);
-  });
-}
-function applyAutoLeisureAllRows(){
-  if (!dt) return;
-  dt.rows().every(function(){
-    const r = this.data();
-    if (!r) return;
-    const acc = r[1];
-    if (shouldAutoLeisure(acc)) {
-      r[3] = "Leisure";
-      this.data(r);
-    }
-  });
-}
-
-function washToBool(val){
-  if (val === true) return true;
-  const s = String(val ?? "").trim().toLowerCase();
-  return (s === "true" || s === "1" || s === "yes" || s === "ja" || s === "y" || s === "✓");
-}
+function normAccount(s){ return String(s ?? "").toUpperCase().replace(/[’']/g, "'").replace(/[“”"]/g, '"').replace(/\u00A0/g, ' ').replace(/\s+/g, " ").trim(); }
+function shouldAutoLeisure(accountName){ const n = normAccount(accountName); return n && AUTO_LEISURE_ACCOUNTS.some(a => n.includes(normAccount(a)) || n.startsWith(normAccount(a))); }
+function applyAutoLeisureAllRows(){ if (!dt) return; dt.rows().every(function(){ const r=this.data(); if(r && shouldAutoLeisure(r[1])){ r[3]="Leisure"; this.data(r);} }); }
+function washToBool(val){ if (val === true) return true; const s = String(val ?? "").trim().toLowerCase(); return ["true","1","yes","ja","y","✓"].includes(s); }
 function washDisplay(val){ return washToBool(val) ? "true" : "false"; }
-function marketNormalize(val){
-  const s = String(val ?? "").trim();
-  if (!s) return "";
-  const found = MARKET_OPTIONS.find(o => o.toLowerCase() === s.toLowerCase());
-  return found ?? s;
-}
-function renderWash(val, type){
-  const b = washToBool(val);
-  if (type === 'display'){
-    return `<input class="cell-check wash-check" type="checkbox" ${b ? "checked":""}>`;
-  }
-  return b ? "true" : "false";
-}
+function marketNormalize(val){ const s = String(val ?? "").trim(); if(!s) return ""; const found = MARKET_OPTIONS.find(o => o.toLowerCase() === s.toLowerCase()); return found ?? s; }
+function renderWash(val, type){ const b = washToBool(val); return type === 'display' ? `<input class="cell-check wash-check" type="checkbox" ${b ? "checked" : ""}>` : (b ? "true" : "false"); }
 function renderMarket(val, type){
   const v = marketNormalize(val);
-  if (type === 'display'){
-    const opts = MARKET_OPTIONS.map(o=>{
-      const sel = (o && o.toLowerCase() === v.toLowerCase()) ? "selected" : (!o && !v ? "selected":"");
-      return `<option value="${o}" ${sel}>${o || "—"}</option>`;
-    }).join("");
-    return `<select class="cell-select market-select">${opts}</select>`;
-  }
-  return v || "";
+  if (type !== 'display') return v || "";
+  const opts = MARKET_OPTIONS.map(o => `<option value="${o}" ${(o && o.toLowerCase()===v.toLowerCase()) || (!o && !v) ? 'selected' : ''}>${o || '—'}</option>`).join('');
+  return `<select class="cell-select market-select" title="Market wählen">${opts}</select>`;
 }
 
 function parseDelimited(text, delimiter){
   const rows=[]; let row=[]; let cur=''; let inQuotes=false;
   for(let i=0;i<text.length;i++){
     const ch=text[i], next=text[i+1];
-    if(ch === '"'){
-      if(inQuotes && next === '"'){ cur+='"'; i++; }
-      else inQuotes = !inQuotes;
-      continue;
-    }
-    if(!inQuotes && (ch === '\n' || ch === '\r')){
-      if(ch === '\r' && next === '\n') i++;
-      row.push(cur); rows.push(row); row=[]; cur=''; continue;
-    }
-    if(!inQuotes && ch === delimiter){
-      row.push(cur); cur=''; continue;
-    }
+    if(ch === '"'){ if(inQuotes && next === '"'){ cur+='"'; i++; } else inQuotes=!inQuotes; continue; }
+    if(!inQuotes && (ch === '\n' || ch === '\r')){ if(ch === '\r' && next === '\n') i++; row.push(cur); rows.push(row); row=[]; cur=''; continue; }
+    if(!inQuotes && ch === delimiter){ row.push(cur); cur=''; continue; }
     cur += ch;
   }
   row.push(cur); rows.push(row);
   return rows.map(r=>r.map(c=>(c??'').trim())).filter(r=>r.some(c=>c!==''));
 }
-function detectDelimiter(line){
-  if(line.includes('\t')) return '\t';
-  const comma=(line.match(/,/g)||[]).length;
-  const semi=(line.match(/;/g)||[]).length;
-  return semi>comma?';':',';
-}
-
-function normHeaderKey(name){
-  return String(name ?? '')
-    .replace(/^\uFEFF/, '')
-    .replace(/["']/g,'')
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g,'');
-}
-function buildHeaderMap(headerRow){
-  const map={};
-  headerRow.forEach((name,idx)=>{
-    const k = normHeaderKey(name);
-    if(k) map[k]=idx;
-  });
-  return map;
-}
-function getCell(cols,map,name){
-  const idx = map[normHeaderKey(name)];
-  if(idx===undefined) return '';
-  return cols[idx] ?? '';
-}
-function findHeaderRowIndex(rows){
-  const wantedA = normHeaderKey('ARRIVALDATE');
-  const wantedD = normHeaderKey('DEPARTUREDATE');
-  const maxScan = Math.min(rows.length, 40);
-  for(let i=0;i<maxScan;i++){
-    const r = rows[i] || [];
-    const keys = r.map(normHeaderKey);
-    if(keys.includes(wantedA) && keys.includes(wantedD)) return i;
-  }
-  return -1;
-}
-
-function isFooterOrLabel(firstCell){
-  const v=(firstCell||'').trim();
-  return v.startsWith('CF_NAME_FILTER') || v==='Filter' || v.startsWith('CF_');
-}
-function isGrandTotal(cols,map){
-  const groupBy=getCell(cols,map,'GROUP_BY');
-  const col1=getCell(cols,map,'COL1');
-  const bookId=(getCell(cols,map,'BOOK_ID')||'').trim();
-  return (groupBy==='ALL' && col1==='ALL' && bookId==='');
-}
-function isCurrencyOrVariance(cols,map){
-  const col1=(getCell(cols,map,'COL1')||'').trim().toLowerCase();
-  const col2=(getCell(cols,map,'COL2')||'').trim().toLowerCase();
-  const col3=(getCell(cols,map,'COL3')||'').trim().toLowerCase();
-  const hay=`${col1} ${col2} ${col3}`;
-  return hay.includes('currency') || hay.includes('variance') || hay==='chf' || hay.includes(' chf');
-}
+function detectDelimiter(line){ if(line.includes('\t')) return '\t'; return ((line.match(/;/g)||[]).length > (line.match(/,/g)||[]).length) ? ';' : ','; }
+function normHeaderKey(name){ return String(name ?? '').replace(/^\uFEFF/, '').replace(/["']/g,'').trim().toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function buildHeaderMap(headerRow){ const map={}; headerRow.forEach((name,idx)=>{ const k=normHeaderKey(name); if(k) map[k]=idx; }); return map; }
+function getCell(cols,map,name){ const idx = map[normHeaderKey(name)]; return idx===undefined ? '' : (cols[idx] ?? ''); }
+function findHeaderRowIndex(rows){ const a=normHeaderKey('ARRIVALDATE'), d=normHeaderKey('DEPARTUREDATE'); for(let i=0;i<Math.min(rows.length,40);i++){ const keys=(rows[i]||[]).map(normHeaderKey); if(keys.includes(a) && keys.includes(d)) return i; } return -1; }
+function isFooterOrLabel(firstCell){ const v=(firstCell||'').trim(); return v.startsWith('CF_NAME_FILTER') || v==='Filter' || v.startsWith('CF_'); }
+function isGrandTotal(cols,map){ return getCell(cols,map,'GROUP_BY')==='ALL' && getCell(cols,map,'COL1')==='ALL' && (getCell(cols,map,'BOOK_ID')||'').trim()===''; }
+function isCurrencyOrVariance(cols,map){ const hay=`${getCell(cols,map,'COL1')} ${getCell(cols,map,'COL2')} ${getCell(cols,map,'COL3')}`.toLowerCase(); return hay.includes('currency') || hay.includes('variance') || hay==='chf' || hay.includes(' chf'); }
 
 function parseOperaDate(d){
   if(d === null || d === undefined) return null;
   let s = String(d).replace(/\u00A0/g,' ').trim();
   if(!s) return null;
   let m = s.match(/(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2}|\d{4})/);
-  if(m){
-    const day = Number(m[1]);
-    const mon = Number(m[2]);
-    let year = Number(m[3]);
-    if(year < 100) year = 2000 + year;
-    return new Date(Date.UTC(year, mon-1, day));
-  }
+  if(m){ let y=Number(m[3]); if(y<100) y=2000+y; return new Date(Date.UTC(y, Number(m[2])-1, Number(m[1]))); }
   m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if(m){
-    const year = Number(m[1]), mon = Number(m[2]), day = Number(m[3]);
-    return new Date(Date.UTC(year, mon-1, day));
-  }
+  if(m){ return new Date(Date.UTC(Number(m[1]), Number(m[2])-1, Number(m[3]))); }
   return null;
 }
-function parseISODate(s){
-  if(!s) return null;
-  const m=String(s).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(!m) return null;
-  return new Date(Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])));
-}
-function operaDateKey(d){
-  const dt = parseOperaDate(d);
-  if(!dt) return 0;
-  const y = dt.getUTCFullYear();
-  const m = dt.getUTCMonth()+1;
-  const day = dt.getUTCDate();
-  return (y*10000) + (m*100) + day;
-}
-function renderOperaDateSort(data, type){
-  if(type === 'sort' || type === 'type') return operaDateKey(data);
-  return data;
-}
+function parseISODate(s){ const m=String(s||'').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? new Date(Date.UTC(+m[1], +m[2]-1, +m[3])) : null; }
+function operaDateKey(d){ const dt=parseOperaDate(d); return dt ? (dt.getUTCFullYear()*10000)+(dt.getUTCMonth()+1)*100+dt.getUTCDate() : 0; }
+function renderOperaDateSort(data, type){ return (type === 'sort' || type === 'type') ? operaDateKey(data) : data; }
 
-function normStatusRaw(s){
-  return String(s ?? "").toUpperCase().replace(/\u00A0/g,' ').trim();
-}
+function normStatusRaw(s){ return String(s ?? "").toUpperCase().replace(/\u00A0/g,' ').trim(); }
 function statusCodeFromAnyText(s){
-  const raw = normStatusRaw(s);
-  const letters = raw.replace(/[^A-Z]/g,'');
-  if(!letters) return "OTHER";
-
-  if (letters === "CLX") return "CXL";
-  if (letters.includes("CANCEL") || letters.includes("CANCELL")) return "CXL";
-  if (letters.includes("CXL")) return "CXL";
-  if (letters.includes("ACT")) return "ACT";
-  if (letters.includes("TEN")) return "TEN";
-  if (letters.includes("DEF")) return "DEF";
+  const raw = normStatusRaw(s), letters = raw.replace(/[^A-Z]/g,'');
+  if(!letters) return 'OTHER';
+  if (letters === 'CLX' || letters.includes('CANCEL') || letters.includes('CANCELL') || letters.includes('CXL')) return 'CXL';
+  if (letters.includes('ACT')) return 'ACT';
+  if (letters.includes('TEN')) return 'TEN';
+  if (letters.includes('DEF')) return 'DEF';
   return letters;
 }
-function statusBucketFromCode(code){
-  const c = String(code || "").trim().toUpperCase();
-  if (c === "ACT") return "ACT";
-  if (c === "TEN" || c === "DEF") return "OTB";
-  if (c === "CXL") return "CXL";
-  return "OTHER";
-}
+function statusBucketFromCode(code){ const c=String(code||'').trim().toUpperCase(); if(c==='ACT') return 'ACT'; if(c==='TEN' || c==='DEF') return 'OTB'; if(c==='CXL') return 'CXL'; return 'OTHER'; }
 
-let washQuickOn = false;
-let marketQuick = "";
-let monthQuick = "";
-let chgMonthQuick = "";
-
+let washQuickOn = false, marketQuick = '', monthQuick = '', chgMonthQuick = '';
 $.fn.dataTable.ext.search.push(function(settings, data){
   if(settings.nTable.id !== 'reportTable') return true;
-
-  if (washQuickOn){
-    if (String(data[2]).toLowerCase() !== 'true') return false;
-  }
-  if (marketQuick){
-    if (String(data[3]).toLowerCase() !== marketQuick.toLowerCase()) return false;
-  }
+  if (washQuickOn && String(data[2]).toLowerCase() !== 'true') return false;
+  if (marketQuick && String(data[3]).toLowerCase() !== marketQuick.toLowerCase()) return false;
 
   if (monthQuick){
-    const arrM = parseOperaDate(data[4]);
-    const depM = parseOperaDate(data[5]) || arrM;
-    if(!arrM) return false;
-    const monthIdx = Number(monthQuick);
-    const a = arrM.getTime();
-    const d = depM ? depM.getTime() : a;
-    const yStart = arrM.getUTCFullYear();
-    const yEnd = (depM || arrM).getUTCFullYear();
-    let ok = false;
-    for(let y=yStart; y<=yEnd; y++){
-      const ms = Date.UTC(y, monthIdx-1, 1);
-      const me = Date.UTC(y, monthIdx, 1);
-      if(a < me && d >= ms){ ok = true; break; }
+    const arrM = parseOperaDate(data[4]); const depM = parseOperaDate(data[5]) || arrM; if(!arrM) return false;
+    const monthIdx = Number(monthQuick), a = arrM.getTime(), d = depM.getTime(); let ok=false;
+    for(let y=arrM.getUTCFullYear(); y<=depM.getUTCFullYear(); y++){
+      const ms = Date.UTC(y, monthIdx-1, 1), me = Date.UTC(y, monthIdx, 1);
+      if(a < me && d >= ms){ ok=true; break; }
     }
     if(!ok) return false;
   }
+  if (chgMonthQuick){ const chg=parseOperaDate(data[14]); if(!chg || (chg.getUTCMonth()+1)!==Number(chgMonthQuick)) return false; }
 
-  if (chgMonthQuick){
-    const chg = parseOperaDate(data[14]);
-    if(!chg) return false;
-    if((chg.getUTCMonth()+1) !== Number(chgMonthQuick)) return false;
-  }
-
-  const arr = parseOperaDate(data[4]);
-  const dep = parseOperaDate(data[5]);
-
-  const arrFrom = parseISODate(document.getElementById('arrFrom').value);
-  const arrTo   = parseISODate(document.getElementById('arrTo').value);
-  const depFrom = parseISODate(document.getElementById('depFrom').value);
-  const depTo   = parseISODate(document.getElementById('depTo').value);
-
-  function inRange(d, from, to){
-    if(!d) return true;
-    if(from && d < from) return false;
-    if(to){
-      const toEnd = new Date(to.getTime()+24*60*60*1000-1);
-      if(d > toEnd) return false;
-    }
-    return true;
-  }
-  if(!inRange(arr, arrFrom, arrTo)) return false;
-  if(!inRange(dep, depFrom, depTo)) return false;
-
-  const negOnly=document.getElementById('negOnly').checked;
-  if(negOnly){
-    if(!(toNumber(data[7])<0 || toNumber(data[10])<0)) return false;
-  }
+  const arr = parseOperaDate(data[4]), dep = parseOperaDate(data[5]);
+  const arrFrom = parseISODate(document.getElementById('arrFrom').value), arrTo = parseISODate(document.getElementById('arrTo').value);
+  const depFrom = parseISODate(document.getElementById('depFrom').value), depTo = parseISODate(document.getElementById('depTo').value);
+  const inRange = (d, from, to) => !d || ((!from || d >= from) && (!to || d <= new Date(to.getTime()+86400000-1)));
+  if(!inRange(arr, arrFrom, arrTo) || !inRange(dep, depFrom, depTo)) return false;
+  if(document.getElementById('negOnly').checked && !(toNumber(data[7])<0 || toNumber(data[10])<0)) return false;
   return true;
 });
 
 let dt;
-const STORAGE_KEY="gruppenbericht_data_clx_cxl_fix_chgdate_multistatus_v2";
-const COL_STATUS = 13;
-const COL_CHGDATE = 14;
-const COL_SOURCE = 15;
-const COL_STATUSCODE = 16;
-
-function ensureStatusCode(row){
-  row[COL_STATUSCODE] = statusCodeFromAnyText(row[COL_STATUS]);
-  return row;
-}
-
-function saveTableToLocal(){
-  try{
-    const rows=dt.rows().data().toArray().map(r=>[...r]);
-    rows.forEach(r=>{
-      r[2]=washToBool(r[2]);
-      r[3]=shouldAutoLeisure(r[1]) ? "Leisure" : marketNormalize(r[3]);
-      ensureStatusCode(r);
-    });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-  }catch(e){ console.warn(e); }
-}
-function loadTableFromLocal(){
-  try{
-    const saved=localStorage.getItem(STORAGE_KEY);
-    if(!saved) return;
-    const rows=JSON.parse(saved);
-    if(!Array.isArray(rows) || !rows.length) return;
-    if(dt.rows().count()>0) return;
-    rows.forEach(r=>{
-      const rr=[...r];
-      rr[2]=washToBool(rr[2]);
-      rr[3]=shouldAutoLeisure(rr[1]) ? "Leisure" : marketNormalize(rr[3]);
-      rr[COL_STATUSCODE]=statusCodeFromAnyText(rr[COL_STATUS]);
-      dt.row.add(rr);
-    });
-    dt.draw();
-  }catch(e){ console.warn(e); }
-}
-
-function computeTotals(rows){
-  let curRev=0, pickRev=0, curRm=0, pickRm=0;
-  rows.forEach(r=>{
-    curRm  += toNumber(r[6]);
-    pickRm += toNumber(r[9]);
-    curRev += toNumber(r[7]);
-    pickRev += toNumber(r[10]);
-  });
-  return {rows:rows.length, curRm, pickRm, curRev, pickRev};
-}
-function countCxl(rows){
-  let c=0;
-  rows.forEach(r=>{ if(String(r[COL_STATUSCODE]||"").toUpperCase()==="CXL") c++; });
-  return c;
-}
+const STORAGE_KEY="gruppenbericht_refined_light_v1";
+const COL_STATUS = 13, COL_CHGDATE = 14, COL_SOURCE = 15, COL_STATUSCODE = 16;
+function ensureStatusCode(row){ row[COL_STATUSCODE] = statusCodeFromAnyText(row[COL_STATUS]); return row; }
+function saveTableToLocal(){ try{ const rows=dt.rows().data().toArray().map(r=>[...r]); rows.forEach(r=>{ r[2]=washToBool(r[2]); r[3]=shouldAutoLeisure(r[1]) ? 'Leisure' : marketNormalize(r[3]); ensureStatusCode(r);}); localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); }catch(e){ console.warn(e);} }
+function loadTableFromLocal(){ try{ const saved=localStorage.getItem(STORAGE_KEY); if(!saved || dt.rows().count()>0) return; JSON.parse(saved).forEach(r=>{ const rr=[...r]; rr[2]=washToBool(rr[2]); rr[3]=shouldAutoLeisure(rr[1]) ? 'Leisure' : marketNormalize(rr[3]); rr[COL_STATUSCODE]=statusCodeFromAnyText(rr[COL_STATUS]); dt.row.add(rr); }); dt.draw(); }catch(e){ console.warn(e);} }
+function computeTotals(rows){ let curRev=0,pickRev=0,curRm=0,pickRm=0; rows.forEach(r=>{ curRm+=toNumber(r[6]); pickRm+=toNumber(r[9]); curRev+=toNumber(r[7]); pickRev+=toNumber(r[10]); }); return {rows:rows.length, curRm, pickRm, curRev, pickRev}; }
+function countCxl(rows){ return rows.filter(r => String(r[COL_STATUSCODE]||'').toUpperCase()==='CXL').length; }
 function updateTotals(){
-  const allRows = dt.rows().data().toArray();
-  const rows=dt.rows({search:'applied'}).data().toArray();
-  const t=computeTotals(rows);
+  const allRows = dt.rows().data().toArray(), rows = dt.rows({search:'applied'}).data().toArray(), t=computeTotals(rows);
   document.getElementById('f_rows').textContent=t.rows;
-  document.getElementById('f_rmcur').textContent=String(Math.round(t.curRm));
-  document.getElementById('f_rmpick').textContent=String(Math.round(t.pickRm));
+  document.getElementById('f_rmcur').textContent=Math.round(t.curRm);
+  document.getElementById('f_rmpick').textContent=Math.round(t.pickRm);
   document.getElementById('f_rev').textContent=fmtMoney(t.curRev)+" CHF";
   document.getElementById('f_prev').textContent=fmtMoney(t.pickRev)+" CHF";
-  document.getElementById('dbg_cxl_total').textContent = countCxl(allRows);
-  document.getElementById('dbg_cxl_filtered').textContent = countCxl(rows);
+  document.getElementById('dbg_cxl_filtered').textContent=countCxl(rows);
+  document.getElementById('dbg_cxl_total_wrap').textContent='von ' + countCxl(allRows) + ' gesamt';
 }
 
-let chRevSplit, chStatusStack, chTrendKw, chTop10BB;
-
-function kwKeyFromOperaDate(operaDDMMYY){
-  const d = parseOperaDate(operaDDMMYY);
-  if(!d) return null;
-
-  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-  const dayNum = (date.getUTCDay() + 6) % 7;
-  date.setUTCDate(date.getUTCDate() - dayNum + 3);
-  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
-  const firstDayNum = (firstThursday.getUTCDay() + 6) % 7;
-  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNum + 3);
-  const week = 1 + Math.round((date - firstThursday) / (7*24*60*60*1000));
-  const year = date.getUTCFullYear();
-  return `${year}-KW${String(week).padStart(2,'0')}`;
-}
-function rowMarket(r){
-  const m = String(r[3] ?? "").trim().toLowerCase();
-  if(m === "corporate") return "Corporate";
-  if(m === "leisure") return "Leisure";
-  return "—";
-}
-function getAppliedRows(){ return dt.rows({search:'applied'}).data().toArray(); }
-
-function buildChartData(){
-  const rows = getAppliedRows();
-
-  const rev = { Corporate:{cur:0,pick:0}, Leisure:{cur:0,pick:0}, "—":{cur:0,pick:0} };
-  const statuses = ["ACT","OTB","CXL","OTHER"];
-  const statusAgg = {
-    Corporate:Object.fromEntries(statuses.map(s=>[s,0])),
-    Leisure:Object.fromEntries(statuses.map(s=>[s,0])),
-    "—":Object.fromEntries(statuses.map(s=>[s,0]))
-  };
-  const trend = {};
-  const bbAgg = {};
-
-  rows.forEach(r=>{
-    const m = rowMarket(r);
-    const cur = toNumber(r[7]);
-    const pick = toNumber(r[10]);
-    rev[m].cur += cur; rev[m].pick += pick;
-
-    const bucket = statusBucketFromCode(r[COL_STATUSCODE]);
-    statusAgg[m][bucket] += cur;
-
-    const kw = kwKeyFromOperaDate(r[4]);
-    if(kw){
-      trend[kw] ||= {Corporate:0, Leisure:0, "—":0};
-      trend[kw][m] += cur;
-    }
-
-    const bb = String(r[0] ?? "").trim() || "—";
-    bbAgg[bb] ||= {Corporate:0, Leisure:0, "—":0, total:0};
-    bbAgg[bb][m] += cur;
-    bbAgg[bb].total += cur;
-  });
-
-  const markets = ["Corporate","Leisure","—"];
-  const kwLabels = Object.keys(trend).sort((a,b)=> a.localeCompare(b,'de'));
-  const bbList = Object.entries(bbAgg)
-    .map(([name,obj])=>({name,...obj}))
-    .sort((a,b)=> Math.abs(b.total)-Math.abs(a.total))
-    .slice(0,10);
-
-  return {markets, rev, statuses, statusAgg, kwLabels, trend, bbList};
-}
-
-function upsertCharts(){
-  const d = buildChartData();
-
-  const labels1 = d.markets;
-  const curVals = labels1.map(m=>d.rev[m].cur);
-  const pickVals= labels1.map(m=>d.rev[m].pick);
-
-  const ctx1 = document.getElementById('ch_rev_split');
-  if(chRevSplit) chRevSplit.destroy();
-  chRevSplit = new Chart(ctx1, {
-    type:'bar',
-    data:{ labels:labels1, datasets:[{label:'Revenue Cur',data:curVals},{label:'Revenue Pick',data:pickVals}] },
-    options:{ responsive:true, plugins:{ legend:{position:'top'} } }
-  });
-
-  const labels2 = d.statuses;
-  const corp = labels2.map(s=>d.statusAgg["Corporate"][s]);
-  const leis = labels2.map(s=>d.statusAgg["Leisure"][s]);
-  const unk  = labels2.map(s=>d.statusAgg["—"][s]);
-
-  const ctx2 = document.getElementById('ch_status_stack');
-  if(chStatusStack) chStatusStack.destroy();
-  chStatusStack = new Chart(ctx2, {
-    type:'bar',
-    data:{ labels:labels2, datasets:[
-      {label:'Corporate',data:corp,stack:'rev'},
-      {label:'Leisure',data:leis,stack:'rev'},
-      {label:'—',data:unk,stack:'rev'}
-    ]},
-    options:{ responsive:true, plugins:{legend:{position:'top'}}, scales:{ x:{stacked:true}, y:{stacked:true} } }
-  });
-
-  const labels3 = d.kwLabels;
-  const corpT = labels3.map(k=>d.trend[k]?.Corporate ?? 0);
-  const leisT = labels3.map(k=>d.trend[k]?.Leisure ?? 0);
-  const unkT  = labels3.map(k=>d.trend[k]?.["—"] ?? 0);
-
-  const ctx3 = document.getElementById('ch_trend_kw');
-  if(chTrendKw) chTrendKw.destroy();
-  chTrendKw = new Chart(ctx3, {
-    type:'line',
-    data:{ labels:labels3, datasets:[
-      {label:'Corporate',data:corpT,tension:0.25,pointRadius:2},
-      {label:'Leisure',data:leisT,tension:0.25,pointRadius:2},
-      {label:'—',data:unkT,tension:0.25,pointRadius:2}
-    ]},
-    options:{ responsive:true, plugins:{legend:{position:'top'}} }
-  });
-
-  const ctx4 = document.getElementById('ch_top10_bb');
-  const bbLabels = d.bbList.map(x=> x.name.length>42 ? (x.name.slice(0,42)+"…") : x.name);
-  const corpBB = d.bbList.map(x=> x.Corporate ?? 0);
-  const leisBB = d.bbList.map(x=> x.Leisure ?? 0);
-  const unkBB  = d.bbList.map(x=> x["—"] ?? 0);
-
-  if(chTop10BB) chTop10BB.destroy();
-  chTop10BB = new Chart(ctx4, {
-    type:'bar',
-    data:{ labels:bbLabels, datasets:[
-      {label:'Corporate',data:corpBB,stack:'bb'},
-      {label:'Leisure',data:leisBB,stack:'bb'},
-      {label:'—',data:unkBB,stack:'bb'}
-    ]},
-    options:{ responsive:true, indexAxis:'y', plugins:{legend:{position:'top'}}, scales:{ x:{stacked:true}, y:{stacked:true} } }
-  });
-}
-
-function stripHtml(s){ return String(s ?? "").replace(/<[^>]*>/g,'').trim(); }
-
-function buildAppliedTableForExport(){
-  const visibleCols=[];
-  dt.columns().every(function(i){ if(this.visible() && i !== COL_STATUSCODE) visibleCols.push(i); });
-
-  const colNames={
-    0:'Business Block',1:'Account',2:'Wash-Potenzial',3:'Market',4:'Anreise',5:'Abreise',
-    6:'Rm Cur',7:'Revenue Cur',8:'Avg Cur',9:'Rm Pick',10:'Revenue Pick',11:'Avg Pick',
-    12:'BB Id',13:'Status',14:'Chg Date',15:'Quelle'
-  };
-
-  const rows=dt.rows({search:'applied'}).data().toArray();
-  const head = visibleCols.map(i=> colNames[i] || `Col ${i}`);
-
-  const body = rows.map(r=> visibleCols.map(i=>{
-    if(i===2) return { value: washDisplay(r[2]), isNumber:false };
-    if(i===3) return { value: marketNormalize(r[3]), isNumber:false };
-    if(i===7 || i===10) return { value: toNumber(r[i]), isNumber:true };
-    if(i===8 || i===11) return { value: toNumber(r[i]), isNumber:true };
-    if(i===6 || i===9)  return { value: Math.round(toNumber(r[i])), isNumber:true };
-    return { value: stripHtml(r[i]), isNumber:false };
-  }));
-
-  return { head, body, visibleCols };
-}
-
-function getChartDataUrls(){
-  const ids = ["ch_rev_split","ch_status_stack","ch_trend_kw","ch_top10_bb"];
-  const out = {};
-  ids.forEach(id=>{
-    const c=document.getElementById(id);
-    out[id]=(c && c.toDataURL)? c.toDataURL("image/png",1.0): null;
-  });
-  return out;
-}
-function downloadExcelWithCharts(){
-  const charts = getChartDataUrls();
-  const t = buildAppliedTableForExport();
-  const totals = computeTotals(dt.rows({search:'applied'}).data().toArray());
-  const stamp = new Date().toISOString().slice(0,10);
-
-  const css = ""
-    + "body{font-family:Calibri,Arial,sans-serif;font-size:11pt;}"
-    + "h1{font-size:16pt;margin:0 0 6px 0;}"
-    + ".meta{margin:0 0 10px 0;color:#444;}"
-    + "table{border-collapse:collapse;width:100%;}"
-    + "th,td{border:1px solid #bbb;padding:4px 6px;white-space:nowrap;}"
-    + "th{background:#dde7f3;font-weight:bold;}"
-    + ".grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px 0;}"
-    + ".box{border:1px solid #bbb;padding:8px;}"
-    + ".cap{font-weight:bold;margin:0 0 6px 0;}"
-    + "img{max-width:100%;height:auto;}";
-
-  const chartBlock = ""
-    + "<div class=\"grid\">"
-    + "<div class=\"box\"><div class=\"cap\">Revenue Cur vs Pick</div>" + (charts.ch_rev_split ? ("<img src=\"" + charts.ch_rev_split + "\">") : "<i>Chart fehlt</i>") + "</div>"
-    + "<div class=\"box\"><div class=\"cap\">Revenue nach Status</div>" + (charts.ch_status_stack ? ("<img src=\"" + charts.ch_status_stack + "\">") : "<i>Chart fehlt</i>") + "</div>"
-    + "<div class=\"box\"><div class=\"cap\">Trend KW</div>" + (charts.ch_trend_kw ? ("<img src=\"" + charts.ch_trend_kw + "\">") : "<i>Chart fehlt</i>") + "</div>"
-    + "<div class=\"box\"><div class=\"cap\">Top 10 Business Blocks</div>" + (charts.ch_top10_bb ? ("<img src=\"" + charts.ch_top10_bb + "\">") : "<i>Chart fehlt</i>") + "</div>"
-    + "</div>";
-
-  const tableHtml = ""
-    + "<table><thead><tr>"
-    + t.head.map(h=>"<th>"+String(h).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+"</th>").join("")
-    + "</tr></thead><tbody>"
-    + t.body.map(row=>"<tr>"+row.map(cell=>{
-        const v = cell?.value;
-        if(cell?.isNumber){
-          const num = Number(v);
-          const safe = Number.isFinite(num) ? String(num) : "0";
-          return "<td style=\"mso-number-format:0.00;\">" + safe + "</td>";
-        }
-        const s = String(v ?? "")
-          .replace(/&/g,"&amp;")
-          .replace(/</g,"&lt;")
-          .replace(/>/g,"&gt;");
-        return "<td>" + s + "</td>";
-      }).join("")+"</tr>").join("")
-    + "</tbody></table>";
-
-  const html = ""
-    + "<html><head><meta charset=\"utf-8\"><style>" + css + "</style></head><body>"
-    + "<h1>Gruppenbericht</h1>"
-    + "<div class=\"meta\">"
-    + "Stand: " + stamp
-    + " | Zeilen: " + totals.rows
-    + " | RmCur: " + Math.round(totals.curRm)
-    + " | RmPick: " + Math.round(totals.pickRm)
-    + " | Cur Rev: " + fmt2(totals.curRev)
-    + " | Pick Rev: " + fmt2(totals.pickRev)
-    + "</div>"
-    + chartBlock
-    + tableHtml
-    + "</body></html>";
-
-  const blob = new Blob([html], {type: "application/vnd.ms-excel;charset=utf-8"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "Gruppenbericht_" + stamp + "_mit_Charts.xls";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(a.href);
-}
-
-let sortRevCurDesc = true;
-let sortRevPickDesc = true;
-let sortMonthAsc = true;
-
+function upsertCharts(){}
 function getSelectedStatuses(){
-  return Array.from(document.getElementById('statusSelect').selectedOptions || []).map(o => String(o.value || '').trim().toUpperCase()).filter(Boolean);
+  const val = String(document.getElementById('statusSelect')?.value || '').trim().toUpperCase();
+  return val ? [val] : [];
 }
 function applyStatusFilter(){
   const selected = getSelectedStatuses();
@@ -1037,369 +785,136 @@ function applyStatusFilter(){
     dt.column(COL_STATUSCODE).search('', true, false).draw();
     return;
   }
-  const regex = '^(' + selected.map(v => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')$';
+  const regex = '^(' + selected.join('|') + ')$';
   dt.column(COL_STATUSCODE).search(regex, true, false).draw();
 }
 function clearStatusSelection(){
   const sel = document.getElementById('statusSelect');
-  Array.from(sel.options).forEach(o => o.selected = false);
+  if(sel) sel.value = '';
 }
+function stripHtml(s){ return String(s ?? '').replace(/<[^>]*>/g,'').trim(); }
 
 $(function(){
+  initCompactMode();
   dt = $('#reportTable').DataTable({
-    orderCellsTop:true,
-    ordering:true,
-    order: [],
-    pageLength:25,
-    lengthMenu:[10,25,50,100],
-    dom:'Bfrtip',
+    orderCellsTop:true, ordering:true, order:[], pageLength:25, lengthMenu:[10,25,50,100], dom:'Bfrtip',
     buttons:[
-      {
-        extend:'excelHtml5',
-        title:'Gruppenbericht',
-        text:'Excel (Daten)',
-        exportOptions:{
-          columns:function(idx){
-            return idx !== COL_STATUSCODE && dt.column(idx).visible();
-          },
-          format:{
-            body:function(data,row,col,node){
-              if(col===2) return washToBool($(node).find('input.wash-check').prop('checked')) ? true : false;
-              if(col===3) return marketNormalize($(node).find('select.market-select').val()||'');
-              if(col===7 || col===10) return toNumber(data);
-              if(col===8 || col===11) return toNumber(data);
-              if(col===6 || col===9)  return Math.round(toNumber(data));
-              return String(data).replace(/<[^>]*>/g,'').trim();
-            }
-          }
-        }
-      },
-      { text:'Excel (mit Charts)', action:function(){ downloadExcelWithCharts(); } },
-      { extend:'colvis', text:'Spalten auswählen' }
+      { extend:'excelHtml5', title:'Gruppenbericht', text:'Excel (Daten)', exportOptions:{ columns:(idx)=> idx !== COL_STATUSCODE && dt.column(idx).visible(), format:{ body:function(data,row,col,node){ if(col===2) return washToBool($(node).find('input.wash-check').prop('checked')) ? true : false; if(col===3) return marketNormalize($(node).find('select.market-select').val()||''); if([7,8,10,11].includes(col)) return toNumber(data); if([6,9].includes(col)) return Math.round(toNumber(data)); return String(data).replace(/<[^>]*>/g,'').trim(); } } } },
     ],
     columnDefs:[
-      { targets:0, className:'bbcol', width:'360px' },
-      { targets:1, className:'accol', width:'440px' },
-      { targets:3, className:'mktcol', width:'135px' },
-      { targets:[6,9], className:'rmcol', width:'88px' },
-      { targets:14, className:'chgcol', width:'120px' },
-
-      { targets:[4,5,14], render:renderOperaDateSort },
-
-      { targets:2, render:renderWash },
-      { targets:3, render:renderMarket },
-
-      { targets:[6,9], render:renderInt },
-      { targets:[7,10], render:renderCHF },
-      { targets:[8,11], render:renderRate },
-
-      { targets: COL_STATUSCODE, visible:false, searchable:true },
-      { targets: COL_STATUS, orderData: [COL_STATUSCODE] }
+      { targets:0, className:'bbcol', width:'220px' }, { targets:1, className:'accol', width:'260px' }, { targets:3, className:'mktcol', width:'90px' }, { targets:[6,9], className:'rmcol', width:'65px' }, { targets:14, className:'chgcol', width:'95px' },
+      { targets:[4,5,14], render:renderOperaDateSort }, { targets:2, render:renderWash }, { targets:3, render:renderMarket }, { targets:[6,9], render:renderInt }, { targets:[7,10], render:renderCHF }, { targets:[8,11], render:renderRate },
+      { targets:COL_STATUSCODE, visible:false, searchable:true }, { targets:COL_STATUS, orderData:[COL_STATUSCODE] }
     ],
     rowCallback:function(row,data){
-      const code=String(data[COL_STATUSCODE]||'').toUpperCase().trim();
-      row.classList.toggle('ten-row', code==='TEN');
-
-      $('td', row).removeClass('neg');
-      if(toNumber(data[7])<0) $('td', row).eq(7).addClass('neg');
-      if(toNumber(data[10])<0) $('td', row).eq(10).addClass('neg');
+      const code=String(data[COL_STATUSCODE]||'').toUpperCase().trim(); row.classList.toggle('ten-row', code==='TEN'); $('td', row).removeClass('neg'); if(toNumber(data[7])<0) $('td', row).eq(7).addClass('neg'); if(toNumber(data[10])<0) $('td', row).eq(10).addClass('neg');
     }
   });
   window.dt = dt;
+  buildColumnChooser();
 
-  $('#reportTable thead tr.filter-row th').each(function(i){
-    $('input', this).on('keyup change clear', function(){
-      const val = this.value || '';
-      if(i === COL_STATUS){
-        dt.column(COL_STATUSCODE).search(val, false, true).draw();
-        return;
-      }
-      if(i === COL_STATUSCODE) return;
-      dt.column(i).search(val || '').draw();
-    });
-  });
-
+  $('#reportTable thead tr.filter-row th').each(function(i){ $('input', this).on('keyup change clear', function(){ const val=this.value || ''; if(i===COL_STATUS){ dt.column(COL_STATUSCODE).search(val, false, true).draw(); return; } if(i!==COL_STATUSCODE) dt.column(i).search(val).draw(); }); });
   $('#statusSelect').on('change', applyStatusFilter);
-
-  $('#monthSelect').on('change', function(){
-    monthQuick = (this.value || "").trim();
-    dt.draw();
-  });
-
-  $('#chgMonthSelect').on('change', function(){
-    chgMonthQuick = (this.value || "").trim();
-    dt.draw();
-  });
-
-  ['arrFrom','arrTo','depFrom','depTo','negOnly'].forEach(id=>{
-    document.getElementById(id).addEventListener('change', function(){ dt.draw(); });
-  });
-
+  $('#monthSelect').on('change', function(){ monthQuick=(this.value||'').trim(); dt.draw(); });
+  $('#chgMonthSelect').on('change', function(){ chgMonthQuick=(this.value||'').trim(); dt.draw(); });
+  ['arrFrom','arrTo','depFrom','depTo','negOnly'].forEach(id=> document.getElementById(id).addEventListener('change', ()=>dt.draw()));
   dt.on('draw', function(){ updateTotals(); upsertCharts(); });
 
-  try{
-    if(Array.isArray(window.__GB_PRELOADED_ROWS__) && window.__GB_PRELOADED_ROWS__.length){
-      dt.clear();
-      window.__GB_PRELOADED_ROWS__.forEach(function(r){ dt.row.add(r); });
-      dt.draw();
-    }else{
-      loadTableFromLocal();
-    }
-  }catch(e){
-    console.warn(e);
-    loadTableFromLocal();
-  }
+  try{ if(Array.isArray(window.__GB_PRELOADED_ROWS__) && window.__GB_PRELOADED_ROWS__.length){ dt.clear(); window.__GB_PRELOADED_ROWS__.forEach(r=>dt.row.add(r)); dt.draw(); } else loadTableFromLocal(); }catch(e){ console.warn(e); loadTableFromLocal(); }
+  applyAutoLeisureAllRows(); saveTableToLocal(); updateTotals(); upsertCharts();
 
-  applyAutoLeisureAllRows();
-  saveTableToLocal();
-  updateTotals();
-  upsertCharts();
-
-  $('#reportTable tbody').on('change','input.wash-check',function(){
-    const tr=$(this).closest('tr');
-    const row=dt.row(tr);
+  $('#reportTable tbody').on('change','input.wash-check',function(){ const row=dt.row($(this).closest('tr')); const data=row.data(); data[2]=$(this).prop('checked'); row.data(data).invalidate(); saveTableToLocal(); dt.draw(false); });
+  $('#reportTable tbody').on('mousedown click focus','select.market-select',function(e){ e.stopPropagation(); });
+  $('#reportTable tbody').on('change input','select.market-select',function(e){
+    e.stopPropagation();
+    const row=dt.row($(this).closest('tr'));
     const data=row.data();
-    data[2]=$(this).prop('checked');
-    row.data(data).invalidate();
-    saveTableToLocal();
-    dt.draw(false);
-  });
-
-  $('#reportTable tbody').on('change','select.market-select',function(){
-    const tr=$(this).closest('tr');
-    const row=dt.row(tr);
-    const data=row.data();
+    if(!data) return;
     data[3]=marketNormalize($(this).val());
     row.data(data).invalidate();
     saveTableToLocal();
-    dt.draw(false);
+    updateTotals();
   });
-
-  setMarketQuick("");
+  setMarketQuick('');
 });
 
-function setWashQuick(on){
-  washQuickOn = !!on;
-  document.getElementById('washQuickBtn').classList.toggle('active', washQuickOn);
-  dt.draw();
-}
-function setMarketQuick(val){
-  marketQuick = val || "";
-  document.getElementById('mktAllBtn').classList.toggle('active', marketQuick==="");
-  document.getElementById('mktCorpBtn').classList.toggle('active', marketQuick==="Corporate");
-  document.getElementById('mktLeisBtn').classList.toggle('active', marketQuick==="Leisure");
-  dt.draw();
-}
-document.getElementById('washQuickBtn').addEventListener('click', function(){ setWashQuick(!washQuickOn); });
-document.getElementById('mktAllBtn').addEventListener('click', function(){ setMarketQuick(""); });
-document.getElementById('mktCorpBtn').addEventListener('click', function(){ setMarketQuick("Corporate"); });
-document.getElementById('mktLeisBtn').addEventListener('click', function(){ setMarketQuick("Leisure"); });
+function setWashQuick(on){ washQuickOn=!!on; document.getElementById('washQuickBtn').classList.toggle('active', washQuickOn); dt.draw(); }
+function setMarketQuick(val){ marketQuick=val||''; ['All','Corp','Leis'].forEach(()=>{}); document.getElementById('mktAllBtn').classList.toggle('active', marketQuick===''); document.getElementById('mktCorpBtn').classList.toggle('active', marketQuick==='Corporate'); document.getElementById('mktLeisBtn').classList.toggle('active', marketQuick==='Leisure'); dt.draw(); }
+document.getElementById('washQuickBtn').addEventListener('click', ()=>setWashQuick(!washQuickOn));
+document.getElementById('mktAllBtn').addEventListener('click', ()=>setMarketQuick(''));
+document.getElementById('mktCorpBtn').addEventListener('click', ()=>setMarketQuick('Corporate'));
+document.getElementById('mktLeisBtn').addEventListener('click', ()=>setMarketQuick('Leisure'));
 
-document.getElementById('sortRevCurBtn').addEventListener('click', function(){
-  dt.order([7, sortRevCurDesc ? 'desc' : 'asc']).draw();
-  sortRevCurDesc = !sortRevCurDesc;
-});
-document.getElementById('sortRevPickBtn').addEventListener('click', function(){
-  dt.order([10, sortRevPickDesc ? 'desc' : 'asc']).draw();
-  sortRevPickDesc = !sortRevPickDesc;
-});
-document.getElementById('sortResetBtn').addEventListener('click', function(){
-  dt.order([]).draw();
-});
-document.getElementById('sortMonthBtn').addEventListener('click', function(){
-  dt.order([[4, sortMonthAsc ? 'asc' : 'desc']]).draw();
-  this.textContent = 'Sort: Monat (Anreise) ' + (sortMonthAsc ? '↑' : '↓');
-  sortMonthAsc = !sortMonthAsc;
-});
-
-document.getElementById('chartsResetBtn').addEventListener('click', function(){ if(dt) dt.draw(); });
-
-document.getElementById('clearBtn').addEventListener('click', function(){
-  dt.clear().draw();
-  updateTotals();
-  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
-});
-document.getElementById('resetBtn').addEventListener('click', function(){
-  dt.columns().search('');
-  dt.search('');
-  document.querySelectorAll('.col-filter').forEach(function(i){ i.value=''; });
-  clearStatusSelection();
-  document.getElementById('monthSelect').value='';
-  document.getElementById('chgMonthSelect').value='';
-  monthQuick='';
-  chgMonthQuick='';
-  document.getElementById('arrFrom').value='';
-  document.getElementById('arrTo').value='';
-  document.getElementById('depFrom').value='';
-  document.getElementById('depTo').value='';
-  document.getElementById('negOnly').checked=false;
-
-  setWashQuick(false);
-  setMarketQuick("");
-
-  dt.order([]).draw();
-});
+let sortRevCurDesc=true, sortRevPickDesc=true, sortMonthAsc=true;
+document.getElementById('sortRevCurBtn').addEventListener('click', function(){ dt.order([7, sortRevCurDesc ? 'desc':'asc']).draw(); sortRevCurDesc=!sortRevCurDesc; });
+document.getElementById('sortRevPickBtn').addEventListener('click', function(){ dt.order([10, sortRevPickDesc ? 'desc':'asc']).draw(); sortRevPickDesc=!sortRevPickDesc; });
+document.getElementById('sortResetBtn').addEventListener('click', function(){ dt.column(COL_STATUSCODE).search('', true, false); dt.order([]).draw(); });
+document.getElementById('sortMonthBtn').addEventListener('click', function(){ dt.order([[4, sortMonthAsc ? 'asc':'desc']]).draw(); this.textContent='Monat Anreise ' + (sortMonthAsc ? '↑':'↓'); sortMonthAsc=!sortMonthAsc; });
+document.getElementById('clearBtn').addEventListener('click', function(){ dt.clear().draw(); updateTotals(); try{ localStorage.removeItem(STORAGE_KEY);}catch(e){} });
+document.getElementById('resetBtn').addEventListener('click', function(){ dt.columns().search(''); dt.search(''); document.querySelectorAll('.col-filter').forEach(i=>i.value=''); clearStatusSelection(); ['monthSelect','chgMonthSelect','arrFrom','arrTo','depFrom','depTo'].forEach(id=>document.getElementById(id).value=''); document.getElementById('negOnly').checked=false; monthQuick=''; chgMonthQuick=''; setWashQuick(false); setMarketQuick(''); dt.column(COL_STATUSCODE).search('', true, false); dt.order([]).draw(); });
 
 function addRowsFromOpera(text, sourceName){
-  const firstLine=(text.split(/\r?\n/).find(l=>l.trim().length)||'');
-  const delim=detectDelimiter(firstLine);
-  const rows=parseDelimited(text, delim);
+  const rows=parseDelimited(text, detectDelimiter((text.split(/\r?\n/).find(l=>l.trim().length)||'')));
   if(!rows.length) return;
-
-  const hIdx = findHeaderRowIndex(rows);
-  if(hIdx < 0){
-    alert('Import-Fehler: Header nicht gefunden. Bitte exportiere als "Delimited Data" (TAB) inkl. Spaltennamen.');
-    return;
-  }
-
-  const header=rows[hIdx];
-  const map=buildHeaderMap(header);
-
-  if(map[normHeaderKey('ARRIVALDATE')]===undefined || map[normHeaderKey('DEPARTUREDATE')]===undefined){
-    alert('Import-Fehler: Header fehlt. Zeile mit Spaltennamen muss ARRIVALDATE/DEPARTUREDATE enthalten.');
-    return;
-  }
-
+  const hIdx=findHeaderRowIndex(rows);
+  if(hIdx<0){ alert('Import-Fehler: Header nicht gefunden. Bitte als Delimited Data inkl. Spaltennamen exportieren.'); return; }
+  const header=rows[hIdx], map=buildHeaderMap(header);
+  if(map[normHeaderKey('ARRIVALDATE')]===undefined || map[normHeaderKey('DEPARTUREDATE')]===undefined){ alert('Import-Fehler: ARRIVALDATE/DEPARTUREDATE fehlen.'); return; }
   for(let i=hIdx+1;i<rows.length;i++){
-    const cols=rows[i];
-    if(!cols || !cols.length) continue;
-
-    if(isFooterOrLabel(cols[0])) break;
-    if(isGrandTotal(cols,map)) continue;
-    if(isCurrencyOrVariance(cols,map)) continue;
-
-    const pickRm=getCell(cols,map,'CP_PICKUPROOMNIGHTS');
-    const pickRev=getCell(cols,map,'CP_PICKUPREVENUE');
-    const prm=toNumber(pickRm);
-    const pr=toNumber(pickRev);
-    const pickRate=prm>0 ? (pr/prm) : 0;
-
+    const cols=rows[i]; if(!cols || !cols.length) continue; if(isFooterOrLabel(cols[0])) break; if(isGrandTotal(cols,map) || isCurrencyOrVariance(cols,map)) continue;
+    const pickRm=getCell(cols,map,'CP_PICKUPROOMNIGHTS'), pickRev=getCell(cols,map,'CP_PICKUPREVENUE'), prm=toNumber(pickRm), pr=toNumber(pickRev);
     const statusRaw = normStatusRaw(getCell(cols,map,'BOOKING_STATUS') || getCell(cols,map,'BOOKINGSTATUS') || '');
-    const statusCode = statusCodeFromAnyText(statusRaw);
-    const accName = getCell(cols,map,'NVL_ACCOUNT_NAME_AGENT_NAME');
-    const changeDate = getCell(cols,map,'CF_CHANGE_DATE') || getCell(cols,map,'CHG_DATE') || '';
-
-    dt.row.add([
-      getCell(cols,map,'DESCRIPTION'),
-      accName,
-      false,
-      (shouldAutoLeisure(accName) ? "Leisure" : ""),
-      getCell(cols,map,'ARRIVALDATE'),
-      getCell(cols,map,'DEPARTUREDATE'),
-      getCell(cols,map,'CP_CURRENTROOMNIGHTS'),
-      getCell(cols,map,'CP_CURRENTREVENUE'),
-      getCell(cols,map,'CP_CURRENTAVGRATE'),
-      pickRm,
-      pickRev,
-      pickRate,
-      getCell(cols,map,'BOOK_ID'),
-      statusRaw,
-      changeDate,
-      sourceName || '',
-      statusCode
-    ]);
+    const accName = getCell(cols,map,'NVL_ACCOUNT_NAME_AGENT_NAME'), changeDate = getCell(cols,map,'CF_CHANGE_DATE') || getCell(cols,map,'CHG_DATE') || '';
+    dt.row.add([ getCell(cols,map,'DESCRIPTION'), accName, false, shouldAutoLeisure(accName) ? 'Leisure' : '', getCell(cols,map,'ARRIVALDATE'), getCell(cols,map,'DEPARTUREDATE'), getCell(cols,map,'CP_CURRENTROOMNIGHTS'), getCell(cols,map,'CP_CURRENTREVENUE'), getCell(cols,map,'CP_CURRENTAVGRATE'), pickRm, pickRev, prm>0 ? (pr/prm) : 0, getCell(cols,map,'BOOK_ID'), statusRaw, changeDate, sourceName || '', statusCodeFromAnyText(statusRaw) ]);
   }
 }
 
-document.getElementById('importFiles').addEventListener('change', async function(e){
-  const files=Array.from(e.target.files||[]);
-  if(!files.length) return;
+document.getElementById('importFiles').addEventListener('change', async function(e){ for(const file of Array.from(e.target.files||[])){ addRowsFromOpera(await file.text(), file.name); } dt.draw(); applyAutoLeisureAllRows(); updateTotals(); saveTableToLocal(); e.target.value=''; });
 
-  for(const file of files){
-    const text=await file.text();
-    addRowsFromOpera(text, file.name);
-  }
+document.getElementById('pdfBtn').addEventListener('click', function(){
+  const { jsPDF } = window.jspdf, doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'}), stamp=new Date().toISOString().slice(0,10);
+  const rows=dt.rows({search:'applied'}).data().toArray(), totals=computeTotals(rows);
+  const summaryY = 22;
 
-  dt.draw();
-  applyAutoLeisureAllRows();
-  updateTotals();
-  saveTableToLocal();
-  e.target.value='';
-});
+  doc.setFillColor(41,65,92); doc.rect(0,0,297,20,'F'); doc.setFillColor(201,162,77); doc.rect(0,20,297,2,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(17); doc.text('Gruppenbericht', 14, 13);
+  doc.setTextColor(47,44,40); doc.setFontSize(10); doc.text('Stand: ' + stamp, 240, 13);
 
-document.getElementById('pdfBtn').addEventListener('click', async function(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
-  const stamp=new Date().toISOString().slice(0,10);
-
-  doc.setFillColor(11,42,74);
-  doc.rect(0,0,297,18,'F');
-  doc.setFillColor(212,175,55);
-  doc.rect(0,18,297,2,'F');
-  doc.setTextColor(212,175,55);
-  doc.setFontSize(16);
-  doc.text('Gruppenbericht – Charts',14,12);
-
-  const charts = [
-    {id:'ch_rev_split', title:'Revenue Cur vs Pick', x:10,  y:28, w:135, h:62},
-    {id:'ch_status_stack', title:'Revenue nach Status', x:152, y:28, w:135, h:62},
-    {id:'ch_trend_kw', title:'Trend KW', x:10,  y:98, w:135, h:62},
-    {id:'ch_top10_bb', title:'Top 10 Business Blocks', x:152, y:98, w:135, h:62},
+  const boxes = [
+    ['Zeilen', String(totals.rows)],
+    ['Rm Cur', String(Math.round(totals.curRm))],
+    ['Rm Pick', String(Math.round(totals.pickRm))],
+    ['Revenue Cur', fmtMoney(totals.curRev) + ' CHF'],
+    ['Revenue Pick', fmtMoney(totals.pickRev) + ' CHF'],
+    ['CXL gefiltert', String(countCxl(rows))]
   ];
-  doc.setTextColor(11,42,74);
-  doc.setFontSize(9);
-  charts.forEach(c=>{
-    const canvas = document.getElementById(c.id);
-    const url = canvas && canvas.toDataURL ? canvas.toDataURL("image/png",1.0) : null;
-    doc.text(c.title, c.x, c.y-3);
-    if(url){
-      try{ doc.addImage(url,'PNG',c.x,c.y,c.w,c.h); }catch(e){}
-    }
+
+  boxes.forEach((b, i) => {
+    const x = 14 + (i % 3) * 90, y = summaryY + Math.floor(i / 3) * 20;
+    doc.setFillColor(255,248,239); doc.roundedRect(x, y, 82, 15, 3, 3, 'F');
+    doc.setDrawColor(232,220,205); doc.roundedRect(x, y, 82, 15, 3, 3, 'S');
+    doc.setTextColor(41,65,92); doc.setFontSize(8); doc.text(b[0], x+4, y+5.2);
+    doc.setTextColor(47,44,40); doc.setFontSize(11); doc.text(b[1], x+4, y+11);
   });
 
-  doc.addPage();
-  doc.setFillColor(11,42,74);
-  doc.rect(0,0,297,18,'F');
-  doc.setFillColor(212,175,55);
-  doc.rect(0,18,297,2,'F');
-  doc.setTextColor(212,175,55);
-  doc.setFontSize(16);
-  doc.text('Gruppenbericht – Tabelle',14,12);
-
-  const visibleCols=[];
-  dt.columns().every(function(i){ if(this.visible() && i !== COL_STATUSCODE) visibleCols.push(i); });
-
-  const colNames={
-    0:'Business Block',1:'Account',2:'Wash-Potenzial',3:'Market',4:'Anreise',5:'Abreise',
-    6:'Rm Cur',7:'Revenue Cur',8:'Avg Cur',9:'Rm Pick',10:'Revenue Pick',11:'Avg Pick',
-    12:'BB Id',13:'Status',14:'Chg Date',15:'Quelle'
-  };
-
-  const rows=dt.rows({search:'applied'}).data().toArray();
-  const totals=computeTotals(rows);
-
-  const head=[ visibleCols.map(i=>colNames[i]||`Col ${i}`) ];
-  const body=rows.map(r=>visibleCols.map(i=>{
-    if(i===2) return washDisplay(r[2]);
-    if(i===3) return marketNormalize(r[3]);
-    if(i===7 || i===10) return fmtMoney(toNumber(r[i]))+" CHF";
-    if(i===8 || i===11) return fmtMoney(toNumber(r[i]));
-    if(i===6 || i===9) return String(Math.round(toNumber(r[i])));
-    return String(r[i]??'').replace(/<[^>]*>/g,'');
-  }));
-
+  const visibleCols=[]; dt.columns().every(function(i){ if(this.visible() && i !== COL_STATUSCODE) visibleCols.push(i); });
+  const colNames={0:'Business Block',1:'Account',2:'Selection',3:'Market',4:'Anreise',5:'Abreise',6:'Rm Cur',7:'Revenue Cur',8:'Avg Cur',9:'Rm Pick',10:'Revenue Pick',11:'Avg Pick',12:'BB Id',13:'Status',14:'Chg Date',15:'Quelle'};
+  const head=[visibleCols.map(i=>colNames[i]||`Col ${i}`)];
+  const body=rows.map(r=>visibleCols.map(i => i===2 ? washDisplay(r[2]) : i===3 ? marketNormalize(r[3]) : [7,10].includes(i) ? fmtMoney(toNumber(r[i])) + ' CHF' : [8,11].includes(i) ? fmtMoney(toNumber(r[i])) : [6,9].includes(i) ? String(Math.round(toNumber(r[i]))) : stripHtml(r[i])));
   doc.autoTable({
-    head: head, body: body,
-    startY:24,
-    styles:{fontSize:8, cellPadding:2, textColor:[29,29,31]},
-    headStyles:{fillColor:[11,42,74], textColor:[212,175,55]},
-    alternateRowStyles:{fillColor:[250,250,252]},
+    head, body, startY:72,
+    styles:{fontSize:8, cellPadding:2, textColor:[47,44,40]},
+    headStyles:{fillColor:[248,239,226], textColor:[41,65,92]},
+    alternateRowStyles:{fillColor:[255,251,246]},
+    margin:{left:14,right:14,bottom:12},
     didDrawPage:function(data){
-      const y=data.cursor.y+6;
-      doc.setFontSize(10);
-      doc.setTextColor(11,42,74);
-      doc.text(
-        "Filter Total: Zeilen " + totals.rows
-        + " | RmCur " + Math.round(totals.curRm)
-        + " | RmPick " + Math.round(totals.pickRm)
-        + " | Cur Rev " + fmtMoney(totals.curRev) + " CHF"
-        + " | Pick Rev " + fmtMoney(totals.pickRev) + " CHF",
-        14, y
-      );
+      if(data.pageNumber === 1) return;
+      doc.setFillColor(41,65,92); doc.rect(0,0,297,20,'F'); doc.setFillColor(201,162,77); doc.rect(0,20,297,2,'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(17); doc.text('Gruppenbericht – Tabelle', 14, 13);
+      doc.setTextColor(47,44,40); doc.setFontSize(10); doc.text('Stand: ' + stamp, 240, 13);
     }
   });
-
-  doc.save("Gruppenbericht_" + stamp + ".pdf");
+  doc.save('Gruppenbericht_' + stamp + '.pdf');
 });
 
 function __gb_snapshotRows(){
@@ -1412,53 +927,103 @@ function __gb_snapshotRows(){
   });
   return rows;
 }
-function __gb_safeJsonForScript(obj){
-  return JSON.stringify(obj).replace(/</g, "\\u003c");
-}
-function downloadHtmlWithData(){
-  if(typeof dt==='undefined' || !dt){ alert("Tabelle ist noch nicht bereit."); return; }
-
-  var stamp = new Date().toISOString().slice(0,10);
+function downloadJsonSnapshot(){
   var rows = __gb_snapshotRows();
-  var payload = __gb_safeJsonForScript(rows);
-
-  var html = document.documentElement.outerHTML;
-  var openScript = "<scr" + "ipt>";
-  var closeScript = "<" + "/scr" + "ipt>";
-
-  var inject =
-    openScript +
-      "window.__GB_PRELOADED_ROWS__=" + payload + ";" +
-      "window.addEventListener('load',function(){" +
-        "setTimeout(function(){" +
-          "try{" +
-            "if(window.dt && Array.isArray(window.__GB_PRELOADED_ROWS__)){" +
-              "dt.clear();" +
-              "window.__GB_PRELOADED_ROWS__.forEach(function(r){dt.row.add(r);});" +
-              "dt.draw();" +
-              "if(window.applyAutoLeisureAllRows) applyAutoLeisureAllRows();" +
-              "if(window.updateTotals) updateTotals();" +
-              "if(window.upsertCharts) upsertCharts();" +
-              "if(window.saveTableToLocal) saveTableToLocal();" +
-            "}" +
-          "}catch(e){console.warn(e);}" +
-        "},350);" +
-      "});" +
-    closeScript +
-    "</body>";
-
-  html = html.replace("</body>", inject);
-
-  var blob = new Blob([html], {type:"text/html;charset=utf-8"});
-  var a = document.createElement("a");
+  var stamp = new Date().toISOString().slice(0,10);
+  var blob = new Blob([JSON.stringify(rows, null, 2)], {type:'application/json;charset=utf-8'});
+  var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = "Gruppenbericht_mit_Daten_" + stamp + ".html";
+  a.download = 'Gruppenbericht_' + stamp + '.json';
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(a.href);
 }
-document.getElementById("saveHtmlBtn").addEventListener("click", downloadHtmlWithData);
+async function importJsonSnapshot(file){
+  if(!file) return;
+  try{
+    var text = await file.text();
+    var rows = JSON.parse(text);
+    if(!Array.isArray(rows)){
+      alert('Ungültige JSON-Datei. Erwartet wird ein Array mit Zeilen.');
+      return;
+    }
+    dt.clear();
+    rows.forEach(function(r){
+      var rr = Array.isArray(r) ? Array.prototype.slice.call(r) : [];
+      while(rr.length <= COL_STATUSCODE) rr.push('');
+      rr[2] = washToBool(rr[2]);
+      rr[3] = shouldAutoLeisure(rr[1]) ? 'Leisure' : marketNormalize(rr[3]);
+      rr[COL_STATUSCODE] = statusCodeFromAnyText(rr[COL_STATUS]);
+      dt.row.add(rr);
+    });
+    dt.draw();
+    applyAutoLeisureAllRows();
+    updateTotals();
+    saveTableToLocal();
+    syncColumnChooser();
+  }catch(err){
+    console.error(err);
+    alert('Fehler beim JSON-Import. Bitte eine gültige Export-Datei verwenden.');
+  }
+}
+function buildColumnChooser(){
+  const chooser = document.getElementById('columnChooser');
+  if(!chooser || !dt) return;
+  chooser.innerHTML = '';
+  const labels = {0:'Business Block Name',1:'Account Name',2:'Selection',3:'Market',4:'Anreise',5:'Abreise',6:'Rm Cur',7:'Revenue Cur',8:'Avg Rate Cur',9:'Rm Pick',10:'Revenue Pick',11:'Avg Rate Pick',12:'BB Id',13:'Status',14:'Chg Date',15:'Quelle'};
+  const locked = new Set([16]);
+  dt.columns().every(function(i){
+    if(locked.has(i)) return;
+    const label = labels[i] || ('Spalte ' + i);
+    const wrap = document.createElement('label');
+    wrap.className = 'col-item';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = this.visible();
+    input.dataset.col = String(i);
+    input.addEventListener('change', function(ev){
+      dt.column(Number(ev.target.dataset.col)).visible(ev.target.checked, false);
+      dt.columns.adjust().draw(false);
+      saveTableToLocal();
+    });
+    const text = document.createElement('span');
+    text.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(text);
+    chooser.appendChild(wrap);
+  });
+}
+function syncColumnChooser(){
+  const chooser = document.getElementById('columnChooser');
+  if(!chooser || !dt) return;
+  chooser.querySelectorAll('input[data-col]').forEach(function(cb){
+    cb.checked = dt.column(Number(cb.dataset.col)).visible();
+  });
+}
+function toggleColumnPopover(force){
+  const el = document.getElementById('columnPopover');
+  if(!el) return;
+  const open = typeof force === 'boolean' ? force : !el.classList.contains('open');
+  el.classList.toggle('open', open);
+  el.setAttribute('aria-hidden', open ? 'false' : 'true');
+  if(open){ buildColumnChooser(); syncColumnChooser(); }
+}
+
+document.getElementById('colToggleBtn').addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); toggleColumnPopover(); });
+document.getElementById('showAllColsBtn').addEventListener('click', function(){ for(let i=0;i<=15;i++){ dt.column(i).visible(true, false); } dt.columns.adjust().draw(false); syncColumnChooser(); saveTableToLocal(); });
+document.getElementById('hideOptionalColsBtn').addEventListener('click', function(){ const keep = new Set([0,1,2,3,4,5,6,7,9,10,13,14]); for(let i=0;i<=15;i++){ dt.column(i).visible(keep.has(i), false); } dt.columns.adjust().draw(false); syncColumnChooser(); saveTableToLocal(); });
+document.addEventListener('click', function(e){ const pop = document.getElementById('columnPopover'); const btn = document.getElementById('colToggleBtn'); if(!pop || !btn) return; if(pop.contains(e.target) || btn.contains(e.target)) return; toggleColumnPopover(false); });
+window.addEventListener('resize', function(){ if(window.dt){ dt.columns.adjust(); } });
+document.getElementById('exportJsonBtn').addEventListener('click', downloadJsonSnapshot);
+document.getElementById('importJsonBtn').addEventListener('click', function(){
+  document.getElementById('importJsonFile').click();
+});
+document.getElementById('importJsonFile').addEventListener('change', async function(e){
+  var file = (e.target.files || [])[0];
+  await importJsonSnapshot(file);
+  e.target.value = '';
+});
 </script>
 </body>
 </html>

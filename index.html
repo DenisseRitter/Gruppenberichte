@@ -418,7 +418,6 @@
     cursor:pointer;
   }
 
-
   @media (max-width: 1280px){
     .toolbar{ grid-template-columns:1fr; }
     .summary{ grid-template-columns: repeat(3, minmax(140px, 1fr)); }
@@ -639,8 +638,7 @@ function fmt2(n){ return Number(n).toLocaleString("de-CH",{minimumFractionDigits
 function fmtMoney(n){ const val = Number(n); return val < 0 ? "(" + fmt2(Math.abs(val)) + ")" : fmt2(val); }
 function renderInt(data, type){ const n = Math.round(toNumber(data)); return type === 'display' ? String(n) : n; }
 function renderCHF(data, type){ const n = toNumber(data); return type === 'display' ? fmtMoney(n) + " CHF" : n; }
-function renderRate(data, type){ const n = toNumber(data); return type === 'display' ? fmtMoney(n) : n; }
-
+function renderRate(data, type){ const n = toNumber(data); return type === 'display' ? fmt2(n) : Number(n.toFixed(2)); }
 
 const VIEW_KEY='gruppenbericht_view_compact_v1';
 function setCompactMode(on){
@@ -716,6 +714,18 @@ function parseOperaDate(d){
 function parseISODate(s){ const m=String(s||'').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? new Date(Date.UTC(+m[1], +m[2]-1, +m[3])) : null; }
 function operaDateKey(d){ const dt=parseOperaDate(d); return dt ? (dt.getUTCFullYear()*10000)+(dt.getUTCMonth()+1)*100+dt.getUTCDate() : 0; }
 function renderOperaDateSort(data, type){ return (type === 'sort' || type === 'type') ? operaDateKey(data) : data; }
+
+function formatChgMonthLabel(dateValue){
+  const dt = parseOperaDate(dateValue);
+  if(!dt) return '';
+  const months = [
+    'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+    'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+  ];
+  const monthName = months[dt.getUTCMonth()];
+  const yearShort = String(dt.getUTCFullYear()).slice(-2);
+  return `${monthName} ${yearShort}`;
+}
 
 function normStatusRaw(s){ return String(s ?? "").toUpperCase().replace(/\u00A0/g,' ').trim(); }
 function statusCodeFromAnyText(s){
@@ -799,7 +809,75 @@ $(function(){
   dt = $('#reportTable').DataTable({
     orderCellsTop:true, ordering:true, order:[], pageLength:25, lengthMenu:[10,25,50,100], dom:'Bfrtip',
     buttons:[
-      { extend:'excelHtml5', title:'Gruppenbericht', text:'Excel (Daten)', exportOptions:{ columns:(idx)=> idx !== COL_STATUSCODE && dt.column(idx).visible(), format:{ body:function(data,row,col,node){ if(col===2) return washToBool($(node).find('input.wash-check').prop('checked')) ? true : false; if(col===3) return marketNormalize($(node).find('select.market-select').val()||''); if([7,8,10,11].includes(col)) return toNumber(data); if([6,9].includes(col)) return Math.round(toNumber(data)); return String(data).replace(/<[^>]*>/g,'').trim(); } } } },
+      {
+        extend:'excelHtml5',
+        title:'Gruppenbericht',
+        text:'Excel (Daten)',
+        exportOptions:{
+          modifier:{
+            search:'applied',
+            order:'applied'
+          },
+          columns:function(idx){
+            return idx !== COL_STATUSCODE;
+          },
+          format:{
+            body:function(data,row,col,node){
+              if(col===2) return washToBool($(node).find('input.wash-check').prop('checked')) ? true : false;
+              if(col===3) return marketNormalize($(node).find('select.market-select').val()||'');
+              if([7,10].includes(col)) return toNumber(data);
+              if([8,11].includes(col)) return Number(toNumber(data).toFixed(2));
+              if([6,9].includes(col)) return Math.round(toNumber(data));
+              return String(data).replace(/<[^>]*>/g,'').trim();
+            }
+          }
+        },
+        customizeData:function(data){
+          const exportRows = dt.rows({ search:'applied', order:'applied' }).data().toArray();
+
+          data.header = [
+            'Business Block Name',
+            'Account Name',
+            'Selection',
+            'Market',
+            'Anreise',
+            'Abreise',
+            'Rm Cur',
+            'Revenue Cur',
+            'Avg Rate Cur',
+            'Rm Pick',
+            'Revenue Pick',
+            'Avg Rate Pick',
+            'BB Id',
+            'Status',
+            'Chg Date',
+            'Chg Month',
+            'Quelle'
+          ];
+
+          data.body = exportRows.map(function(r){
+            return [
+              stripHtml(r[0]),
+              stripHtml(r[1]),
+              washToBool(r[2]) ? true : false,
+              marketNormalize(r[3]),
+              stripHtml(r[4]),
+              stripHtml(r[5]),
+              Math.round(toNumber(r[6])),
+              toNumber(r[7]),
+              Number(toNumber(r[8]).toFixed(2)),
+              Math.round(toNumber(r[9])),
+              toNumber(r[10]),
+              Number(toNumber(r[11]).toFixed(2)),
+              stripHtml(r[12]),
+              stripHtml(r[13]),
+              stripHtml(r[14]),
+              formatChgMonthLabel(r[14]),
+              stripHtml(r[15])
+            ];
+          });
+        }
+      },
     ],
     columnDefs:[
       { targets:0, className:'bbcol', width:'220px' }, { targets:1, className:'accol', width:'260px' }, { targets:3, className:'mktcol', width:'90px' }, { targets:[6,9], className:'rmcol', width:'65px' }, { targets:14, className:'chgcol', width:'95px' },
@@ -865,7 +943,7 @@ function addRowsFromOpera(text, sourceName){
     const pickRm=getCell(cols,map,'CP_PICKUPROOMNIGHTS'), pickRev=getCell(cols,map,'CP_PICKUPREVENUE'), prm=toNumber(pickRm), pr=toNumber(pickRev);
     const statusRaw = normStatusRaw(getCell(cols,map,'BOOKING_STATUS') || getCell(cols,map,'BOOKINGSTATUS') || '');
     const accName = getCell(cols,map,'NVL_ACCOUNT_NAME_AGENT_NAME'), changeDate = getCell(cols,map,'CF_CHANGE_DATE') || getCell(cols,map,'CHG_DATE') || '';
-    dt.row.add([ getCell(cols,map,'DESCRIPTION'), accName, false, shouldAutoLeisure(accName) ? 'Leisure' : '', getCell(cols,map,'ARRIVALDATE'), getCell(cols,map,'DEPARTUREDATE'), getCell(cols,map,'CP_CURRENTROOMNIGHTS'), getCell(cols,map,'CP_CURRENTREVENUE'), getCell(cols,map,'CP_CURRENTAVGRATE'), pickRm, pickRev, prm>0 ? (pr/prm) : 0, getCell(cols,map,'BOOK_ID'), statusRaw, changeDate, sourceName || '', statusCodeFromAnyText(statusRaw) ]);
+    dt.row.add([ getCell(cols,map,'DESCRIPTION'), accName, false, shouldAutoLeisure(accName) ? 'Leisure' : '', getCell(cols,map,'ARRIVALDATE'), getCell(cols,map,'DEPARTUREDATE'), getCell(cols,map,'CP_CURRENTROOMNIGHTS'), getCell(cols,map,'CP_CURRENTREVENUE'), getCell(cols,map,'CP_CURRENTAVGRATE'), pickRm, pickRev, prm>0 ? Number((pr/prm).toFixed(2)) : 0, getCell(cols,map,'BOOK_ID'), statusRaw, changeDate, sourceName || '', statusCodeFromAnyText(statusRaw) ]);
   }
 }
 
@@ -900,7 +978,7 @@ document.getElementById('pdfBtn').addEventListener('click', function(){
   const visibleCols=[]; dt.columns().every(function(i){ if(this.visible() && i !== COL_STATUSCODE) visibleCols.push(i); });
   const colNames={0:'Business Block',1:'Account',2:'Selection',3:'Market',4:'Anreise',5:'Abreise',6:'Rm Cur',7:'Revenue Cur',8:'Avg Cur',9:'Rm Pick',10:'Revenue Pick',11:'Avg Pick',12:'BB Id',13:'Status',14:'Chg Date',15:'Quelle'};
   const head=[visibleCols.map(i=>colNames[i]||`Col ${i}`)];
-  const body=rows.map(r=>visibleCols.map(i => i===2 ? washDisplay(r[2]) : i===3 ? marketNormalize(r[3]) : [7,10].includes(i) ? fmtMoney(toNumber(r[i])) + ' CHF' : [8,11].includes(i) ? fmtMoney(toNumber(r[i])) : [6,9].includes(i) ? String(Math.round(toNumber(r[i]))) : stripHtml(r[i])));
+  const body=rows.map(r=>visibleCols.map(i => i===2 ? washDisplay(r[2]) : i===3 ? marketNormalize(r[3]) : [7,10].includes(i) ? fmtMoney(toNumber(r[i])) + ' CHF' : [8,11].includes(i) ? fmt2(toNumber(r[i])) : [6,9].includes(i) ? String(Math.round(toNumber(r[i]))) : stripHtml(r[i])));
   doc.autoTable({
     head, body, startY:72,
     styles:{fontSize:8, cellPadding:2, textColor:[47,44,40]},
@@ -923,6 +1001,8 @@ function __gb_snapshotRows(){
   rows.forEach(function(r){
     r[2] = washToBool(r[2]);
     r[3] = shouldAutoLeisure(r[1]) ? "Leisure" : marketNormalize(r[3]);
+    r[8] = Number(toNumber(r[8]).toFixed(2));
+    r[11] = Number(toNumber(r[11]).toFixed(2));
     ensureStatusCode(r);
   });
   return rows;
@@ -954,6 +1034,8 @@ async function importJsonSnapshot(file){
       while(rr.length <= COL_STATUSCODE) rr.push('');
       rr[2] = washToBool(rr[2]);
       rr[3] = shouldAutoLeisure(rr[1]) ? 'Leisure' : marketNormalize(rr[3]);
+      rr[8] = Number(toNumber(rr[8]).toFixed(2));
+      rr[11] = Number(toNumber(rr[11]).toFixed(2));
       rr[COL_STATUSCODE] = statusCodeFromAnyText(rr[COL_STATUS]);
       dt.row.add(rr);
     });
